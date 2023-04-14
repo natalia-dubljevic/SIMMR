@@ -6,49 +6,24 @@ from IPython.display import HTML
 import sympy as smp
 from sympy.vector import cross
 from skimage.restoration import unwrap_phase
-phi = np.linspace(0, 2*np.pi, 100)
-# circle in the xy plane
-def l(phi):
-    return 1 * np.array([np.zeros(len(phi)), np.cos(phi), np.sin(phi)])
 
-lx, ly, lz = l(phi)
-plt.figure(figsize=(7,7))
-plt.plot(lx, lz)
-plt.xlabel('$x/R$', fontsize=25)
-plt.ylabel('$z/R$', fontsize=25)
-plt.savefig('bs_test.png')
+from utils import create_circle, plot_coil, B_volume
+from sympy_utils import create_sympy_circle
+
+
+lx, ly, lz = create_circle(1, 'x')
+plot_coil(lx, ly, lz)
+
 
 t, x, y, z = smp.symbols('t, x, y, z')
 
 # get l, r, and the separation vector r - l
-l = 1 * smp.Matrix([0, smp.cos(t), smp.sin(t)])
+l = create_sympy_circle(t, 5, 'x')
 # in theory a rectangle, but the derivative is undefined
 # l = smp.Matrix([smp.functions.Abs(smp.cos(t)) * smp.cos(t) + smp.functions.Abs(smp.sin(t)) * smp.sin(t),
 #                 smp.functions.Abs(smp.cos(t)) * smp.cos(t) - smp.functions.Abs(smp.sin(t)) * smp.sin(t),
 #                 0])
-#l = smp.Matrix([t, 0, 0])
-r = smp.Matrix([x, y, z])
-sep = r-l
-
-# define the integrand
-integrand = smp.diff(l, t).cross(sep) / sep.norm()**3
-
-# get the x, y, and z components of the integrand
-dBxdt = smp.lambdify([t, x, y, z], integrand[0])
-dBydt = smp.lambdify([t, x, y, z], integrand[1])
-dBzdt = smp.lambdify([t, x, y, z], integrand[2])
-
-# get the magentic field by performing the integral over each component
-def B(x, y, z):
-    return np.array([quad(dBxdt, 0, 2*np.pi, args=(x, y, z))[0],
-                     quad(dBydt, 0, 2*np.pi, args=(x, y, z))[0],
-                     quad(dBzdt, 0, 2*np.pi, args=(x, y, z))[0]])
-
-# set up a meshgrid to solve for the field in some 3d volume
-x, y, z = np.linspace(5, 10, 5), np.linspace(-10, 10, 21), np.linspace(-10, 10, 21)
-xv, yv, zv = np.meshgrid(x, y, z, indexing='ij')
-
-B_field = np.vectorize(B, signature='(),(),()->(n)')(xv, yv, zv)
+B_field = B_volume(t, x, y, z, l)
 Bx = B_field[:,:,:,0]
 By = B_field[:,:,:,1]
 Bz = B_field[:,:,:,2]
@@ -66,6 +41,9 @@ By_slice = By[:, :, 10]
 Bz_slice = Bz[:, :, 10]
 B_slice = Bx[:, :, 10] - 1j * By[:, :, 10]
 
+
+x, y, z = np.linspace(5, 10, 5), np.linspace(-10, 10, 21), np.linspace(-10, 10, 21)
+xv, yv, zv = np.meshgrid(x, y, z, indexing='ij')
 x, y = xv[:, :, 10], yv[:, :, 10]
 B_mag = np.abs(B_slice)
 B_phase = np.angle(B_slice)
@@ -100,6 +78,7 @@ fig.tight_layout()
 plt.savefig('B_field_components.png')
 
 
+
 # Use plotly to make an interactive 3D plot
 data = go.Cone(x=xv.ravel(), y=yv.ravel(), z=zv.ravel(),
                u=Bx.ravel(), v=By.ravel(), w=Bz.ravel(),
@@ -117,4 +96,4 @@ fig = go.Figure(data = data, layout=layout)
 fig.add_scatter3d(x=lx, y=ly, z=lz, mode='lines',
                   line = dict(color='green', width=10))
 
-fig.write_html('test.html')
+fig.write_html('B_field.html')
