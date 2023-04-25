@@ -13,10 +13,10 @@ def create_sympy_rectangle(t: smp.core.symbol.Symbol, height: float, width: floa
     ''' Return piecewise sympy matrices of x, y, z coordinates that outline a rectangle
     '''
     if plane == 'x':
-        side_1 = smp.Matrix([plane_loc, t * height + loc[0], loc[1]])
-        side_2 = smp.Matrix([plane_loc, loc[0] + height, t * width + loc[1]])
-        side_3 = smp.Matrix([plane_loc, t * height + loc[0], loc[1] + width])
-        side_4 = smp.Matrix([plane_loc, loc[0], t * width + loc[1]])
+        side_1 = smp.Matrix([plane_loc, loc[0], t * height + loc[1]])
+        side_2 = smp.Matrix([plane_loc, t * width + loc[0], loc[1] + height])
+        side_3 = smp.Matrix([plane_loc, loc[0] + width, t * height + loc[1]])
+        side_4 = smp.Matrix([plane_loc, t * width + loc[0], loc[1]])
         return [side_1, side_2, side_3, side_4]
     
     elif plane == 'y':
