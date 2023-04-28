@@ -14,7 +14,7 @@ from sympy_utils import create_sympy_circle, create_sympy_rectangle
 from plot_utils import plot_coil, plot_mag_phase, plot_fields
 from sympy.plotting import plot3d_parametric_line
 
-piecewise = True
+piecewise = False
 
 t, x, y, z = smp.symbols('t, x, y, z')
 bbox=(1, -5, -1, 10, 5, 1)

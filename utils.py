@@ -148,18 +148,18 @@ def get_slice(data_volume: np.ndarray, slice: str, slice_loc: float,
         2D slice taken from data_volume at the desired location
     '''
     if slice.lower() == 'x':
-        x = np.arange(bbox[0], bbox[3], vol_res[0])
-        min_ind = np.argmin(x - slice_loc)
+        x = np.arange(bbox[0], bbox[3] + 1e-10, vol_res[0])
+        min_ind = np.argmin(np.abs(x - slice_loc))
         return data_volume[min_ind, :, :]
     
     elif slice.lower() == 'y':
-        y = np.arange(bbox[1], bbox[4], vol_res[1])
-        min_ind = np.argmin(y - slice_loc)
+        y = np.arange(bbox[1], bbox[4] + 1e-10, vol_res[1])
+        min_ind = np.argmin(np.abs(y - slice_loc))
         return data_volume[:, min_ind, :]
     
     elif slice.lower() == 'z':
-        z = np.arange(bbox[2], bbox[5], vol_res[2])
-        min_ind = np.argmin(z - slice_loc)
+        z = np.arange(bbox[2], bbox[5] + 1e-10, vol_res[2])
+        min_ind = np.argmin(np.abs(z - slice_loc))
         return data_volume[:, :, min_ind]
     
 
