@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -111,9 +112,10 @@ def B_volume(t: smp.core.symbol.Symbol, x: smp.core.symbol.Symbol,
     dBydt = smp.lambdify([t, x, y, z], integrand[1])
     dBzdt = smp.lambdify([t, x, y, z], integrand[2])
 
-    x_dim = np.arange(bbox[0], bbox[3], vol_res[0])
-    y_dim = np.arange(bbox[1], bbox[4], vol_res[1])
-    z_dim = np.arange(bbox[2], bbox[5], vol_res[2])
+    # add small tolerance to endpoint so it's included
+    x_dim = np.arange(bbox[0], bbox[3] + 1e-10, vol_res[0])
+    y_dim = np.arange(bbox[1], bbox[4] + 1e-10, vol_res[1])
+    z_dim = np.arange(bbox[2], bbox[5] + 1e-10, vol_res[2])
     xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
     B_field_fn = np.vectorize(B, signature='(),(),()->(n)', 
@@ -161,8 +163,25 @@ def get_slice(data_volume: np.ndarray, slice: str, slice_loc: float,
         return data_volume[:, :, min_ind]
     
 
-def return_coords(fns: list, t : smp.core.symbol.Symbol, inputs : list|np.ndarray) -> tuple:
-    '''Return x, y, z coords from a lambdified function
+def return_coords(fns: list, t : smp.core.symbol.Symbol, inputs : Iterable) -> tuple:
+    '''Return lists of x, y, z coords from a list of lambdified functions
+
+    Parameters
+    ----------
+    fns : list
+        This is a list of lambdified functions. Generally, the list will only be
+        length > 1 if the function you are trying to represent is piecwise
+    t : smp.core.symbol.Symbol
+        The parametrization parameter
+    inputs : Iterable
+        The values taken on by t
+    
+    Returns
+    -------
+    tuple
+        A tuple of size 3 containing lists of x, y, and z coordinates for your
+        function at t = inputs. This is useful for plotting your function
+    
     '''
     xs = []
     ys = []
