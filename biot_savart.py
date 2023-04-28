@@ -17,7 +17,7 @@ from sympy.plotting import plot3d_parametric_line
 piecewise = False
 
 t, x, y, z = smp.symbols('t, x, y, z')
-bbox=(1, -5, -1, 10, 5, 1)
+bbox=(1, -5, -1, 6, 5, 1)
 vol_res=(0.5, 0.5, 0.5)
 radius = 1  # for circles
 height, width = 2, 1  # for rectangles
