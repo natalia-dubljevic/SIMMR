@@ -21,7 +21,7 @@ class Scanner:
     -------
     '''
 
-    def __init__(self, bbox : list, vol_res : list, coils=[]):
+    def __init__(self, bbox : list, vol_res : list):
         '''
         Parameters
         ----------
@@ -35,7 +35,7 @@ class Scanner:
 
         self.bbox = self.set_bbox(bbox)
         self.vol_res = self.set_vol_res(vol_res)
-        self.coils = coils
+        self.coils = []
     
     def set_bbox(self, bbox: list):
         '''Validate and set self.bbox using passed list
@@ -111,5 +111,17 @@ class Scanner:
 
         plt.tight_layout()
         plt.show()
+
+        print("coils plotted")
+        
         return True
     
+    def add_coils(self, coil : Coil):
+        '''
+        ADD DOCUMENTATION
+        '''
+
+        if type(coil) != Coil:
+            raise TypeError('Ensure object passed as the argument is a coil')
+        
+        self.coils.append(coil)

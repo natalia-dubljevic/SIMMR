@@ -7,7 +7,7 @@ import matplotlib as mpl
 from scipy.constants import mu_0, pi
 import sympy as smp
 from sympy.vector import cross
-from skimage.restoration import unwrap_phase
+# from skimage.restoration import unwrap_phase
 
 from utils import B_volume, get_slice, B_volume_piecewise, return_coords
 from sympy_utils import create_sympy_circle, create_sympy_rectangle
@@ -21,7 +21,7 @@ t, x, y, z = smp.symbols('t, x, y, z') # correspond to parametrization variable,
 bbox = (1, -5, -1, 6, 5, 1) # set bounding box; min and max of each of x, y, and z-coords ("frame" of magnetic field)
 vol_res = (0.5, 0.5, 0.5) # volume resolution; "granularity" of map
 radius = 0.5  # for circles (coil shape)
-height, width = 1, 2  # for rectangles (coil shape)
+height, width = 1, 1  # for rectangles (coil shape)
 
 if piecewise is True: # e.g., square, rectangle, etc. coil shape
     # get l, the distance from the origin to the wire
