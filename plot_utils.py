@@ -101,14 +101,14 @@ def plot_mag_phase(B_complex : np.ndarray, slice: str, slice_loc: float,
 
     im1 = axes[0].contourf(ax2, ax1, B_mag, levels=20)
     axes[0].set_title('Magnitude')
-    axes[0].set_xlabel(ax2_label + " (cm)")
-    axes[0].set_ylabel(ax1_label + " (cm)")
+    axes[0].set_xlabel(ax1_label + " (cm)")
+    axes[0].set_ylabel(ax2_label + " (cm)")
     axes[0].set_aspect('equal')
 
     im2 = axes[1].contourf(ax2, ax1, B_phase, levels=20)
     axes[1].set_title('Phase')
-    axes[1].set_xlabel(ax2_label  + " (cm)")
-    axes[1].set_ylabel(ax1_label + " (cm)")
+    axes[1].set_xlabel(ax1_label  + " (cm)")
+    axes[1].set_ylabel(ax2_label + " (cm)")
     axes[1].set_aspect('equal')
 
     fig.colorbar(im1, cax=cax1, orientation='vertical')
@@ -145,9 +145,9 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
     -------
     none
     '''
-    Bx = B_field[:, :, :, 0]
-    By = B_field[:, :, :, 1]
-    Bz = B_field[:, :, :, 2]
+    Bx = B_field[0, :, :, :]
+    By = B_field[1, :, :, :]
+    Bz = B_field[2, :, :, :]
 
     x_dim = np.arange(bbox[0], bbox[3] + 1e-10, vol_res[0])
     y_dim = np.arange(bbox[1], bbox[4] + 1e-10, vol_res[1])
@@ -179,22 +179,22 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
 
     axes[0].contourf(ax2, ax1, Bx_slice, levels=20, norm=norm, cmap='RdBu_r')
     axes[0].set_title(r'$B_x$')
-    axes[0].set_xlabel(ax2_label + " (cm)")
-    axes[0].set_ylabel(ax1_label + " (cm)")
+    axes[0].set_xlabel(ax1_label + " (cm)")
+    axes[0].set_ylabel(ax2_label + " (cm)")
     axes[0].set_aspect('equal')
 
     axes[1].contourf(ax2, ax1, By_slice, levels=20, norm=norm, cmap='RdBu_r')
     axes[1].set_title(r'$B_y$')
-    axes[1].set_xlabel(ax2_label+ " (cm)")
-    axes[1].set_ylabel(ax1_label + " (cm)")
+    axes[1].set_xlabel(ax1_label+ " (cm)")
+    axes[1].set_ylabel(ax2_label + " (cm)")
     axes[1].set_aspect('equal')
 
     #divider = make_axes_locatable(axes[2])
     #cax = divider.append_axes('right', size='5%', pad=0.05)
     axes[2].contourf(ax2, ax1, Bz_slice, levels=20, norm=norm, cmap='RdBu_r')
     axes[2].set_title(r'$B_z$')
-    axes[2].set_xlabel(ax2_label + " (cm)")
-    axes[2].set_ylabel(ax1_label + " (cm)")
+    axes[2].set_xlabel(ax1_label + " (cm)")
+    axes[2].set_ylabel(ax2_label + " (cm)")
     axes[2].set_aspect('equal')
 
     cax = fig.add_axes([axes[2].get_position().x1 + 0.1, axes[2].get_position().y0, 0.02, axes[2].get_position().y1 - axes[2].get_position().y0])

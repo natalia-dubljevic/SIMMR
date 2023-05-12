@@ -43,7 +43,7 @@ else:
 
     B_field = B_volume(t, x, y, z, l, 0, 2*np.pi, bbox=bbox, vol_res=vol_res)
 
-B_complex = B_field[:, :, :, 0] - 1j * B_field[:, :, :, 1]
+B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]
 
 
 slice = 'z'

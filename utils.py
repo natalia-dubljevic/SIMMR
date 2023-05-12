@@ -2,16 +2,16 @@ from collections.abc import Iterable
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
-from scipy.integrate import quad
+from scipy.integrate import quad_vec
 import sympy as smp
     
 def B(lower_lim : float, upper_lim : float, dBxdt : callable, dBydt : callable, 
       dBzdt : callable, x : float, y : float, z : float) -> np.ndarray:
     '''Integrate dBdt along the length of the wire for a given point in space
     '''
-    return np.array([quad(dBxdt, lower_lim, upper_lim, args=(x, y, z))[0],
-                     quad(dBydt, lower_lim, upper_lim, args=(x, y, z))[0],
-                     quad(dBzdt, lower_lim, upper_lim, args=(x, y, z))[0]])
+    return np.array([quad_vec(dBxdt, lower_lim, upper_lim, args=(x, y, z))[0],
+                     quad_vec(dBydt, lower_lim, upper_lim, args=(x, y, z))[0],
+                     quad_vec(dBzdt, lower_lim, upper_lim, args=(x, y, z))[0]])
 
 
 def B_volume_piecewise(t: smp.core.symbol.Symbol, x: smp.core.symbol.Symbol, 
@@ -118,9 +118,7 @@ def B_volume(t: smp.core.symbol.Symbol, x: smp.core.symbol.Symbol,
     z_dim = np.arange(bbox[2], bbox[5] + 1e-10, vol_res[2])
     xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-    B_field_fn = np.vectorize(B, signature='(),(),()->(n)', 
-                              excluded=[0, 1, 2, 3, 4])
-    B_field = B_field_fn(lower_lim, upper_lim, dBxdt, dBydt, dBzdt, xv, yv, zv)
+    B_field = B(lower_lim, upper_lim, dBxdt, dBydt, dBzdt, xv, yv, zv)
 
     return B_field
 
