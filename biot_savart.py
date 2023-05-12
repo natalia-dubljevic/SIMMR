@@ -19,7 +19,7 @@ piecewise = True # toggle for shape type (shape plot requiring piecewise functio
 t, x, y, z = smp.symbols('t, x, y, z') # correspond to parametrization variable, x-coord, y-coord, and z-coord, respectively
 
 bbox = (1, -5, -1, 6, 5, 1) # set bounding box; min and max of each of x, y, and z-coords ("frame" of magnetic field)
-vol_res = (0.5, 0.5, 0.5) # volume resolution; "granularity" of map
+vol_res = (0.1, 0.1, 0.1) # volume resolution; "granularity" of map
 radius = 0.5  # for circles (coil shape)
 height, width = 1, 1  # for rectangles (coil shape)
 

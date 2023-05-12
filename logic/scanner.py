@@ -19,9 +19,17 @@ class Scanner:
 
     Methods
     -------
+    set_bbox(self, bbox : list) -> list
+        Validate and return passed list for setting bbox
+    set_vol_res(self, vol_res : list) -> list
+        Validate and return passed list for setting vol_res
+    plot_coils(self) -> bool
+        3D plot all coils present in the scanner; return True if successful
+    add_coils(self, coil : Coil) -> bool
+        Validate and add passed coil to the list of coils present in the scanner
     '''
 
-    def __init__(self, bbox : list, vol_res : list):
+    def __init__(self, bbox : list, vol_res : list, coils : list[Coil] = []):
         '''
         Parameters
         ----------
@@ -35,15 +43,15 @@ class Scanner:
 
         self.bbox = self.set_bbox(bbox)
         self.vol_res = self.set_vol_res(vol_res)
-        self.coils = []
+        self.coils = coils
     
-    def set_bbox(self, bbox: list):
+    def set_bbox(self, bbox : list) -> list:
         '''Validate and set self.bbox using passed list
 
         Parameters
         ----------
         bbox : list
-            List of 6floats to set the bbox of the scanner object calling it
+            List of 6 floats to set the bbox of the scanner object calling it
 
         Returns
         -------
@@ -65,7 +73,7 @@ class Scanner:
         # Correctly-formatted list passed, so return bbox
         return bbox
     
-    def set_vol_res(self, vol_res : list):
+    def set_vol_res(self, vol_res : list) -> list:
         '''
         Set self.vol_res using passed list
         INQUIRE: SHOULD VALIDATION BE PRESENT (beyond size of list and type float)
@@ -98,6 +106,11 @@ class Scanner:
     def plot_coils(self) -> bool:
         '''
         Plots all coils present in the scanner
+
+        Returns
+        -------
+        True
+            If coils successfully plotted
         '''
 
         fig = plt.figure()
@@ -111,17 +124,29 @@ class Scanner:
 
         plt.tight_layout()
         plt.show()
-
-        print("coils plotted")
         
         return True
     
     def add_coils(self, coil : Coil):
         '''
-        ADD DOCUMENTATION
+        Validate and append passed coil to list of coils present in the scanner object
+
+        Parameters
+        ----------
+        coil : Coil
+            Coil to add to the list of coils 
+
+        Returns
+        -------
+        True
+            If the passed coil was successfully added
         '''
 
         if type(coil) != Coil:
             raise TypeError('Ensure object passed as the argument is a coil')
         
         self.coils.append(coil)
+
+        coil.scanner = self # Define the added coil's scanner as the scanner having added it
+
+        return True # If coil successfully appended to coils list
