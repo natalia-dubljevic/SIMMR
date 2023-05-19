@@ -27,21 +27,37 @@
 #     ex = Example()
 #     app.exec()
 
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+# from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
-class MyEmitter(QObject):
-    my_signal = pyqtSignal(str)
+# class MyEmitter(QObject):
+#     my_signal = pyqtSignal(str)
 
-    def do_something(self):
-        self.my_signal.emit("test")
+#     def do_something(self):
+#         self.my_signal.emit("test")
 
-class MyReceiver(QObject):
+# class MyReceiver(QObject):
 
-    def handle_signal(self, text):
-        print("Received signal:", text)
+#     def handle_signal(self, text):
+#         print("Received signal:", text)
 
-receiver = MyReceiver() # Creates a MyReceiver object
-emitter = MyEmitter() # Creates a MyEmitter object
-emitter.my_signal.connect(receiver.handle_signal)
+# receiver = MyReceiver() # Creates a MyReceiver object
+# emitter = MyEmitter() # Creates a MyEmitter object
+# emitter.my_signal.connect(receiver.handle_signal)
 
-emitter.do_something()  # This will print "Received signal: 42 hello world"
+# emitter.do_something()  # This will print "Received signal: 42 hello world"
+
+import numpy as np
+from scipy.integrate import quad_vec
+import matplotlib.pyplot as plt
+
+alpha = np.linspace(0.0, 2.0, num=30)
+
+f = lambda x: x ** alpha * 0
+x0, x1 = 0, 2
+y = quad_vec(f, x0, x1)[0]
+
+plt.plot(alpha, y)
+plt.plot(alpha, f(alpha))
+plt.show()
+print(alpha)
+print(y)

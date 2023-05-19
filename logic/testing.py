@@ -134,38 +134,66 @@ import sim_utils
 #---------------------------------------------------------------
 # TESTING FOR SENSITIVITY MAP GENERATION
 
-bbox = [1.0, -5.0, -1.0, 6.0, 5.0, 1.0] # set bounding box; min and max of each of x, y, and z-coords ("frame" of magnetic field)
+bbox = [2.0, -5.0, -1.0, 6.0, 5.0, 1.0] # set bounding box; min and max of each of x, y, and z-coords ("frame" of magnetic field)
 vol_res = [0.1, 0.1, 0.1] # volume resolution; "granularity" of map
 radius = 0.5  # for circles (coil shape)
 
 test_scanner = Scanner(bbox, vol_res)
 
+c1 = Coil()
+l1 = Curved(2, 0, 0, 0, 0.75, 0, 0, 0, 0.75)
+s1 = Segment(l1, 0, 2 * np.pi)
+c1.add_segment(s1)
 
+c2 = Coil()
+l2 = Curved(0, 0, 2, 0.75, 0, 0, 0, 0.75, 0)
+s2 = Segment(l2, 0, 2 * np.pi)
+c2.add_segment(s2)
 
+c3 = Coil()
+l3 = Curved(-2, 0, 0, 0, 0.75, 0, 0, 0, 0.75)
+s3 = Segment(l3, 0, 2 * np.pi)
+c3.add_segment(s3)
 
-line2 = Straight(0, 0, -0.5, 0, 2, 0)
-test_seg2 = Segment(line2, 0, 1)
-line3 = Straight(0, 2, -0.5, 1, 0, 1)
-test_seg3 = Segment(line3, 0, 1)
-line4 = Straight(1, 2, 0.5, 0, -1, 0)
-test_seg4 = Segment(line4, 0, 1)
-line5 = Straight(1, 1, 0.5, -1, -1, -1)
-test_seg5 = Segment(line5, 0, 1)
+c4 = Coil()
+l4 = Curved(0, 0, -2, 0.75, 0, 0, 0, 0.75, 0)
+s4 = Segment(l4, 0, 2 * np.pi)
+c4.add_segment(s4)
 
-test_coil2 = Coil()
-test_coil2.add_segment(test_seg2)
-test_coil2.add_segment(test_seg3)
-test_coil2.add_segment(test_seg4)
-test_coil2.add_segment(test_seg5)
+c5 = Coil()
+l5 = Curved(1.5, 0, 1.5, -0.53, 0, 0.53, 0, -0.75, 0)
+s5 = Segment(l5, 0, 2 * np.pi)
+c5.add_segment(s5)
 
-test_scanner.add_coils(test_coil2)
+c6 = Coil()
+l6 = Curved(-1.5, 0, 1.5, 0.53, 0, 0.53, 0, 0.75, 0)
+s6 = Segment(l6, 0, 2 * np.pi)
+c6.add_segment(s6)
+
+c7 = Coil()
+l7 = Curved(-1.5, 0, -1.5, -0.53, 0, 0.53, 0, -0.75, 0)
+s7 = Segment(l7, 0, 2 * np.pi)
+c7.add_segment(s7)
+
+c8 = Coil()
+l8 = Curved(1.5, 0, -1.5, 0.53, 0, 0.53, 0, 0.75, 0)
+s8 = Segment(l8, 0, 2 * np.pi)
+c8.add_segment(s8)
+
+test_scanner.add_coils(c1)
+test_scanner.add_coils(c2)
+test_scanner.add_coils(c3)
+test_scanner.add_coils(c4)
+test_scanner.add_coils(c5)
+test_scanner.add_coils(c6)
+test_scanner.add_coils(c7)
+test_scanner.add_coils(c8)
 
 test_scanner.plot_coils()
 
-B_field = test_coil2.B_volume()
-# B_field = sim_utils.B_volume(test_coil2)
+B_field = c1.B_volume()
 
-B_complex = B_field[:, :, :, 0] - 1j * B_field[:, :, :, 1]
+B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]
 
 
 slice = 'z'

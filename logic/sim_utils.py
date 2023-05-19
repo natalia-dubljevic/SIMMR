@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
-from scipy.integrate import quad
+from scipy.integrate import quad_vec
 import sympy as smp
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -9,9 +9,17 @@ def B(lower_lim : float, upper_lim : float, dBxdt : callable, dBydt : callable,
       dBzdt : callable, x : float, y : float, z : float) -> np.ndarray:
     '''Integrate dBdt along the length of the wire for a given point in space
     '''
-    return np.array([quad(dBxdt, lower_lim, upper_lim, args=(x, y, z))[0],
-                     quad(dBydt, lower_lim, upper_lim, args=(x, y, z))[0],
-                     quad(dBzdt, lower_lim, upper_lim, args=(x, y, z))[0]])
+    x_comp = quad_vec(dBxdt, lower_lim, upper_lim, args=(x, y, z))[0]
+    if type(x_comp) == float:
+        x_comp = np.full(x.shape, x_comp)
+    y_comp = quad_vec(dBydt, lower_lim, upper_lim, args=(x, y, z))[0]
+    if type(y_comp) == float:
+        y_comp = np.full(y.shape, y_comp)
+    z_comp = quad_vec(dBzdt, lower_lim, upper_lim, args=(x, y, z))[0]
+    if type(z_comp) == float:
+        z_comp = np.full(z.shape, z_comp)
+    
+    return np.array([x_comp, y_comp, z_comp])
 
 # def B_volume_piecewise(t: smp.core.symbol.Symbol, x: smp.core.symbol.Symbol, 
 #                        y: smp.core.symbol.Symbol, z: smp.core.symbol.Symbol, 
@@ -206,16 +214,16 @@ def plot_mag_phase(B_complex : np.ndarray, slice: str, slice_loc: float,
     divider2 = make_axes_locatable(axes[1])
     cax2 = divider2.append_axes('right', size='5%', pad=0.05)
 
-    im1 = axes[0].contourf(ax1, ax2, B_mag, levels=20)
+    im1 = axes[0].contourf(ax2, ax1, B_mag, levels=20)
     axes[0].set_title('Magnitude')
-    axes[0].set_xlabel(ax2_label + " (cm)")
-    axes[0].set_ylabel(ax1_label + " (cm)")
+    axes[0].set_xlabel(ax1_label + " (cm)")
+    axes[0].set_ylabel(ax2_label + " (cm)")
     axes[0].set_aspect('equal')
 
-    im2 = axes[1].contourf(ax1, ax2, B_phase, levels=20)
+    im2 = axes[1].contourf(ax2, ax1, B_phase, levels=20)
     axes[1].set_title('Phase')
-    axes[1].set_xlabel(ax2_label  + " (cm)")
-    axes[1].set_ylabel(ax1_label + " (cm)")
+    axes[1].set_xlabel(ax1_label  + " (cm)")
+    axes[1].set_ylabel(ax2_label + " (cm)")
     axes[1].set_aspect('equal')
 
     fig.colorbar(im1, cax=cax1, orientation='vertical')
@@ -252,9 +260,9 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
     -------
     none
     '''
-    Bx = B_field[:, :, :, 0]
-    By = B_field[:, :, :, 1]
-    Bz = B_field[:, :, :, 2]
+    Bx = B_field[0, :, :, :]
+    By = B_field[1, :, :, :]
+    Bz = B_field[2, :, :, :]
 
     x_dim = np.arange(bbox[0], bbox[3] + 1e-10, vol_res[0])
     y_dim = np.arange(bbox[1], bbox[4] + 1e-10, vol_res[1])
@@ -284,13 +292,13 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
 
     fig, axes = plt.subplots(nrows=1, ncols=3)
 
-    axes[0].contourf(ax1, ax2, Bx_slice, levels=20, norm=norm, cmap='RdBu_r')
+    axes[0].contourf(ax2, ax1, Bx_slice, levels=20, norm=norm, cmap='RdBu_r')
     axes[0].set_title(r'$B_x$')
-    axes[0].set_xlabel(ax2_label + " (cm)")
-    axes[0].set_ylabel(ax1_label + " (cm)")
+    axes[0].set_xlabel(ax1_label + " (cm)")
+    axes[0].set_ylabel(ax2_label + " (cm)")
     axes[0].set_aspect('equal')
 
-    axes[1].contourf(ax1, ax2, By_slice, levels=20, norm=norm, cmap='RdBu_r')
+    axes[1].contourf(ax2, ax1, By_slice, levels=20, norm=norm, cmap='RdBu_r')
     axes[1].set_title(r'$B_y$')
     axes[1].set_xlabel(ax2_label+ " (cm)")
     axes[1].set_ylabel(ax1_label + " (cm)")
@@ -298,13 +306,13 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
 
     #divider = make_axes_locatable(axes[2])
     #cax = divider.append_axes('right', size='5%', pad=0.05)
-    axes[2].contourf(ax1, ax2, Bz_slice, levels=20, norm=norm, cmap='RdBu_r')
+    axes[2].contourf(ax2, ax1, Bz_slice, levels=20, norm=norm, cmap='RdBu_r')
     axes[2].set_title(r'$B_z$')
-    axes[2].set_xlabel(ax2_label + " (cm)")
-    axes[2].set_ylabel(ax1_label + " (cm)")
+    axes[2].set_xlabel(ax1_label + " (cm)")
+    axes[2].set_ylabel(ax2_label + " (cm)")
     axes[2].set_aspect('equal')
 
     cax = fig.add_axes([axes[2].get_position().x1 + 0.1, axes[2].get_position().y0, 0.02, axes[2].get_position().y1 - axes[2].get_position().y0])
     plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap='RdBu_r'), cax=cax)
-    fig.tight_layout()
+    # fig.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=250)

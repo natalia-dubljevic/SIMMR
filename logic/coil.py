@@ -5,6 +5,8 @@ import sympy as smp
 from segment import Segment
 import sim_utils
 
+import time
+
 class Coil:
     '''
     A class used to represent the simulated scanners
@@ -28,14 +30,14 @@ class Coil:
         Calculate magnetic field at every point in bbox volume resulting from coil
     '''
 
-    def __init__(self, segments : list[Segment] = []):
+    def __init__(self):
         '''
         Parameters
         ----------
         segments : list[Segment]
             List of line segments that plot the coil; defaults to an empty list
         '''
-        self.segments = segments # List of line segments
+        self.segments = [] # List of line segments
         from scanner import Scanner
         self.scanner : Scanner = None # Link coil to its 'parent' scanner - for access to bbox, vol_res, etc.
     
@@ -129,9 +131,6 @@ class Coil:
             z_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
             xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-            B_field_fn = np.vectorize(sim_utils.B, signature='(),(),()->(n)', 
-                                    excluded=[0, 1, 2, 3, 4])
-            
-            B_fields.append(B_field_fn(segment.low_lim, segment.up_lim, dBxdt, dBydt, dBzdt, xv, yv, zv))
+            B_fields.append(sim_utils.B(segment.low_lim, segment.up_lim, dBxdt, dBydt, dBzdt, xv, yv, zv))
 
         return sum(B_fields)

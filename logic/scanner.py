@@ -123,6 +123,7 @@ class Scanner:
             coil.plot_coil(ax)
 
         plt.tight_layout()
+        plt.gca().set_aspect('equal')
         plt.show()
         
         return True
