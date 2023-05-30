@@ -48,6 +48,29 @@ class Curved:
         centre = smp.Matrix([c_x, c_y, c_z])
         dir_1 = smp.Matrix([r1_x, r1_y, r1_z])
         dir_2 = smp.Matrix([r2_x, r2_y, r2_z])
+
+        # UNDER CONSTRUCTION : MAKING SO THAT IT IS ALWAYS COUNTERCLOCKWISE
+
+        rad1_v = dir_1
+        rad2_v = dir_2
+        norm_v = dir_1.cross(dir_2)
+
+        t = smp.symbols('t')
+        d_fn = smp.sqrt(
+            (centre[0] + norm_v[0] * t) ** 2 +
+            (centre[1] + norm_v[1] * t) ** 2 +
+            (centre[2] + norm_v[2] * t) ** 2
+        )
+
+        diff_d_fn = smp.diff(d_fn, t)
+
+        if diff_d_fn.subs(t, 0) > 0:
+            tmp = dir_1
+            dir_1 = dir_2
+            dir_2 = tmp
+
+
+        # END CONSTRUCTION ZONE
         
         self.fn = centre + dir_1 * smp.cos(self.parameter) + dir_2 * smp.sin(self.parameter)
 
