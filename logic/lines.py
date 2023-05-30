@@ -51,8 +51,6 @@ class Curved:
 
         # UNDER CONSTRUCTION : MAKING SO THAT IT IS ALWAYS COUNTERCLOCKWISE
 
-        rad1_v = dir_1
-        rad2_v = dir_2
         norm_v = dir_1.cross(dir_2)
 
         t = smp.symbols('t')
