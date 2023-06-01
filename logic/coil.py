@@ -2,6 +2,7 @@ import sympy as smp
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as smp
+import matplotlib.quiver as mquiver
 from segment import Segment
 import sim_utils
 
@@ -19,6 +20,8 @@ class Coil:
         List of line segments that plot the coil
     scanner : Scanner
         The 'parent' scanner which the coil object is a part of
+    closed: bool
+        Boolean representing whether the segments form a 'closed' loop
     
     Methods
     -------
@@ -38,6 +41,7 @@ class Coil:
             List of line segments that plot the coil; defaults to an empty list
         '''
         self.segments = [] # List of line segments
+        self.closed = False
         from scanner import Scanner
         self.scanner : Scanner = None # Link coil to its 'parent' scanner - for access to bbox, vol_res, etc.
     
@@ -59,6 +63,18 @@ class Coil:
         for segment in self.segments:
             x_coords, y_coords, z_coords = segment.get_coords()
             ax.plot(x_coords, y_coords, z_coords, c='m')
+
+            # Trying some stuff that ain't working
+            # test = mquiver.Quiver(ax, (x_coords[0], y_coords[0], z_coords[0]),
+            #                       (x_coords[1] - x_coords[0], y_coords[1] - y_coords[0], z_coords[1] - z_coords[0]),
+            #                       color = 'black', pivot = 'middle', headwidth = 3)
+            # ax.add_collection(test, autolim = True)
+
+            ax.quiver(
+                x_coords[0], y_coords[0], z_coords[0],
+                x_coords[1] - x_coords[0], y_coords[1] - y_coords[0], z_coords[1] - z_coords[0],
+                color = 'black', pivot = 'middle', length = 5
+            )
 
         return True
 
@@ -82,6 +98,37 @@ class Coil:
         # Check that object passed is a segment
         if type(segment) != Segment:
             raise TypeError('Segment object not passed as argument. Ensure passed argument is a segment object')
+        
+        if self.closed == True:
+            return False
+
+        if len(self.segments) >= 1:
+            # Check that the 'start' point for the segment is approximately equal to the 'end' point of the previous
+            prev_fn = smp.lambdify(self.segments[-1].line_fn.parameter, self.segments[-1].line_fn.fn, modules='numpy')
+            xp, yp, zp = prev_fn(self.segments[-1].up_lim)
+
+            current_fn = smp.lambdify(segment.line_fn.parameter, segment.line_fn.fn, modules='numpy')
+            xc, yc, zc = current_fn(segment.low_lim)
+
+            xa = xp - 0.05 <= xc and xc <= xp + 0.05
+            ya = yp - 0.05 <= yc and yc <= yp + 0.05
+            za = zp - 0.05 <= zc and zc <= zp + 0.05
+
+            if not (xa and ya and za):
+                return False
+            
+            # Check to see if adding the new segment closes the coil loop
+            first_fn = smp.lambdify(self.segments[0].line_fn.parameter, self.segments[0].line_fn.fn, modules='numpy')
+            xf, yf, zf = first_fn(self.segments[0].low_lim)
+
+            xc, yc, zc = current_fn(segment.up_lim)
+
+            xl = xf - 0.05 <= xc and xc <= xf + 0.05
+            yl = yf - 0.05 <= yc and yc <= yf + 0.05
+            zl = zf - 0.05 <= zc and zc <= zf + 0.05
+
+            if xl and yl and zl:
+                self.closed = True
 
         # Append segment to segments list, once type has been validated
         self.segments.append(segment)

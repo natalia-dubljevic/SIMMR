@@ -1,61 +1,65 @@
-from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QLabel
+from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel,
+                             QGridLayout, QStackedWidget)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QDoubleValidator
 
-import matplotlib.pyplot as plt
+from init_scanner_ui import InitScannerUI
+from scanner_init_ui import SetScannerUI
+from coil_control_ui import CoilOverviewUI
+from coil_design_ui import CoilDesignUI
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("MR Coil Sensitivity Map Simulator") # Set main window title
-        self.init_UI() # Call initUI() to initialize the user interface
+        self.setWindowTitle("SimMR") # Set main window title
+
+        self.window = QWidget()
+        self.setCentralWidget(self.window)
+        self.layout = QGridLayout()
+        self.window.setLayout(self.layout)
+
+        self.tl_w = Control_Panel_Widget(self.window)
+        self.layout.addWidget(self.tl_w, 0, 0)
+        self.tr_w = QLabel('Placeholder', self.window)
+        self.layout.addWidget(self.tr_w, 0, 1)
+        self.bl_w = QLabel('Placeholder', self.window)
+        self.layout.addWidget(self.bl_w, 1, 0)
+        self.br_w = QLabel('Placeholder', self.window)
+        self.layout.addWidget(self.br_w, 1, 1)
+
         self.showMaximized() # Open GUI to maximized screen size
-    
-    def init_UI(self):
-        window = QWidget() # Initialize main widget for self
-        self.setCentralWidget(window) # Make window central widget of self
-        main_layout = QHBoxLayout() # HBox for the "biggest" bin
-        window.setLayout(main_layout) # Set main_bin as window's layout
 
-        self.init_left_bin_UI(main_layout)
+class Control_Panel_Widget(QWidget):
 
-    def init_left_bin_UI(self, layout : QHBoxLayout):
-        left_bin = QWidget() # Left QWidget bin 
-        layout.addWidget(left_bin) # Add left_bin to main_bin
-        self.init_params_UI(left_bin) # Initialize parameter insertion UI
+    BBOX_MIN_VALUE = 0.001 # Double (minimum double)
+    BBOX_MAX_VALUE = 10.000 # Double (maximum double)
+    BBOX_MIN_MAX_DEC = 3 # Integer (number of decimal places)
 
-        right_bin = QWidget() # Right QWidget bin
-        layout.addWidget(right_bin) # Add right_bin to main_bin
+    bbox_validator = QDoubleValidator(BBOX_MIN_VALUE, BBOX_MAX_VALUE, BBOX_MIN_MAX_DEC)
 
-        
+    MIN_RESOLUTION = 0.01 # Double (minimum double)
+    MAX_RESOLUTION = 1.00 # Double (maximum double)
+    MIN_MAX_RES_DEC = 2 # Integer (number of decimal places)
 
-        # right_bin.setLayout(self.init_coil_plot_UI()) # Initialize coil plot UI
+    vol_res_validator = QDoubleValidator(MIN_RESOLUTION, MAX_RESOLUTION, MIN_MAX_RES_DEC)
 
-    def init_params_UI(self, widget : QWidget):
-        params_layout = QVBoxLayout() # Set params_layout as vertical box
-        init_scanner_btn = QPushButton('Initialize MR Scanner') # Button to create a scanner object
-        params_layout.addWidget(init_scanner_btn) # Add button to params layout
+    def __init__(self, parent : QWidget):
+        super().__init__(parent)
 
-        init_scanner_btn.clicked.connect(self.init_scanner)
+        self.stack = QStackedWidget(self)
 
-        params_layout.addWidget(QLabel('Placeholder')) # Placeholder
-        
-        widget.setLayout(params_layout)
-  
-    def init_scanner(self):
-        btn_layout = self.sender().parent().layout()
-        
+        self.init_scanner = InitScannerUI() # Prompt to initialize a scanner
+        self.set_scanner = SetScannerUI() # To define scanner parameters
+        self.coil_control = CoilOverviewUI() # 'Overview' of coils in a given scanner
+        self.coil_design = CoilDesignUI() # Designing / modifying a coil (adding/editing segments etc.)
 
-    def init_coil_plot_UI(self):
-        coil_plot_bin = QWidget()
+        self.stack.addWidget(self.init_scanner)
+        self.stack.addWidget(self.set_scanner)
+        self.stack.addWidget(self.coil_control)
+        self.stack.addWidget(self.coil_design)
 
-    
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.stack)
 
-        
-
-
-if __name__ == '__main__':
-    app = QApplication([])
-    gui = MainWindow()
-    app.exec()
-
-
+        self.stack.setCurrentIndex(0)
