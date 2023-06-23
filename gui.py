@@ -1,7 +1,11 @@
 from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel,
                              QGridLayout, QStackedWidget)
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 from init_scanner_ui import InitScannerUI
 from scanner_init_ui import SetScannerUI
@@ -9,6 +13,9 @@ from coil_control_ui import CoilOverviewUI
 from coil_design_ui import CoilDesignUI
 
 class MainWindow(QMainWindow):
+
+    mouse_clicked_outside = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
@@ -21,7 +28,7 @@ class MainWindow(QMainWindow):
 
         self.tl_w = Control_Panel_Widget(self.window)
         self.layout.addWidget(self.tl_w, 0, 0)
-        self.tr_w = QLabel('Placeholder', self.window)
+        self.tr_w = View_Widget(self.window)
         self.layout.addWidget(self.tr_w, 0, 1)
         self.bl_w = QLabel('Placeholder', self.window)
         self.layout.addWidget(self.bl_w, 1, 0)
@@ -29,6 +36,9 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.br_w, 1, 1)
 
         self.showMaximized() # Open GUI to maximized screen size
+
+    def mousePressEvent(self, event):
+        self.mouse_clicked_outside.emit()
 
 class Control_Panel_Widget(QWidget):
 
@@ -63,3 +73,13 @@ class Control_Panel_Widget(QWidget):
         self.layout.addWidget(self.stack)
 
         self.stack.setCurrentIndex(0)
+
+class View_Widget(QWidget):
+
+    def __init__(self, parent : QWidget):
+        super(View_Widget, self).__init__(parent)
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)

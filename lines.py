@@ -51,21 +51,21 @@ class Curved:
 
         # UNDER CONSTRUCTION : MAKING SO THAT IT IS ALWAYS COUNTERCLOCKWISE
 
-        norm_v = dir_1.cross(dir_2)
+        # norm_v = dir_1.cross(dir_2)
 
-        t = smp.symbols('t')
-        d_fn = smp.sqrt(
-            (centre[0] + norm_v[0] * t) ** 2 +
-            (centre[1] + norm_v[1] * t) ** 2 +
-            (centre[2] + norm_v[2] * t) ** 2
-        )
+        # t = smp.symbols('t')
+        # d_fn = smp.sqrt(
+        #     (centre[0] + norm_v[0] * t) ** 2 +
+        #     (centre[1] + norm_v[1] * t) ** 2 +
+        #     (centre[2] + norm_v[2] * t) ** 2
+        # )
 
-        diff_d_fn = smp.diff(d_fn, t)
+        # diff_d_fn = smp.diff(d_fn, t)
 
-        if diff_d_fn.subs(t, 0) > 0:
-            tmp = dir_1
-            dir_1 = dir_2
-            dir_2 = tmp
+        # if diff_d_fn.subs(t, 0) > 0:
+        #     tmp = dir_1
+        #     dir_1 = dir_2
+        #     dir_2 = tmp
 
 
         # END CONSTRUCTION ZONE

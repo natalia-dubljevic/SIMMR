@@ -191,7 +191,7 @@ test_scanner.add_coils(c8)
 
 test_scanner.plot_coils()
 
-B_field = c1.B_volume()
+B_field = c1.B_volume() # Choose which coil to generate B_field, etc. for 
 
 B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]
 

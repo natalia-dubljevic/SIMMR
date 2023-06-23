@@ -151,3 +151,31 @@ class Scanner:
         coil.scanner = self # Define the added coil's scanner as the scanner having added it
 
         return True # If coil successfully appended to coils list
+    
+    def del_coils(self, coil : Coil):
+        '''
+        Remove the pointed to coil from the list of coils present in the scanner object
+
+        Parameters
+        ----------
+        coil : Coil
+            Pointer to the coil to be removed from the list of coils
+
+        Returns
+        -------
+        True
+            If the passed coil was successfully removed
+        False
+            If the passed coil was not removed (not a coil in the scanner)
+         '''
+        
+        if type(coil) != Coil:
+            raise TypeError('Ensure object passed as the argument is a coil')
+        
+        if coil not in self.coils:
+            return False
+        
+        self.coils.remove(coil)
+        coil.scanner = None
+
+        return True # If coil successfully removed from coils list
