@@ -134,7 +134,7 @@ import sim_utils
 #---------------------------------------------------------------
 # TESTING FOR SENSITIVITY MAP GENERATION
 
-'''
+
 bbox = [2.0, -5.0, -1.0, 6.0, 5.0, 1.0] # set bounding box; min and max of each of x, y, and z-coords ("frame" of magnetic field)
 vol_res = [0.1, 0.1, 0.1] # volume resolution; "granularity" of map
 radius = 0.5  # for circles (coil shape)
@@ -202,10 +202,4 @@ slice_loc = 0
 
 sim_utils.plot_mag_phase(B_complex, slice, slice_loc, vol_res=vol_res, bbox=bbox)
 sim_utils.plot_fields(B_field, slice, slice_loc, vol_res=vol_res, bbox=bbox)
-'''
 
-
-test = [1, 2, 3, 4, 5]
-test[2] = 100
-
-print(test)

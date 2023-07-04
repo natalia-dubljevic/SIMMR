@@ -6,7 +6,7 @@ import matplotlib.quiver as mquiver
 from segment import Segment
 import sim_utils
 
-import time
+import matplotlib as mpl
 
 class Coil:
     '''
@@ -30,7 +30,7 @@ class Coil:
     add_segment(self, segment : Segment) -> bool
         Adds segment that forms (a part of) the coil; True if successful
     B_volume(self) -> np.ndarray
-        Calculate magnetic field at every point in bbox volume resulting from coil
+        Calculate magnetic field at every point in self.scanner.bbox volume resulting from coil
     '''
 
     def __init__(self):
@@ -43,7 +43,7 @@ class Coil:
         self.segments = [] # List of line segments
         self.closed = False
         from scanner import Scanner
-        self.scanner : Scanner = None # Link coil to its 'parent' scanner - for access to bbox, vol_res, etc.
+        self.scanner : Scanner = None # Link coil to its 'parent' scanner - for access to self.scanner.bbox, self.scanner.vol_res, etc.
     
     def plot_coil(self, ax : plt.axes) -> bool:
         '''
@@ -140,7 +140,7 @@ class Coil:
 
         Given a variable l that represents the distance from the origin to a piece 
         of wire, integrate along that wire to find the B (magnetic) field at each
-        point within a defined volume. The volume is bounded by a bbox and space
+        point within a defined volume. The volume is bounded by a self.scanner.bbox and space
         is discretized based on the volume resolution.
 
         Returns

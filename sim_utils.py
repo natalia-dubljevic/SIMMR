@@ -313,6 +313,6 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
     axes[2].set_aspect('equal')
 
     cax = fig.add_axes([axes[2].get_position().x1 + 0.1, axes[2].get_position().y0, 0.02, axes[2].get_position().y1 - axes[2].get_position().y0])
-    return plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap='RdBu_r'), cax=cax)
+    plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap='RdBu_r'), cax=cax)
     # fig.tight_layout()
-    # plt.savefig(filename, bbox_inches='tight', dpi=250)
+    plt.savefig(filename, bbox_inches='tight', dpi=250)

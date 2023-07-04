@@ -286,6 +286,8 @@ class Controller:
         else:
             self.enable_coil_ed()
             self.view.tl_w.coil_control.highlight_selected(self.coil_focus_index)
+            if len(self.scanner.coils[self.coil_focus_index].segments) >= 1:
+                self.show_fields_plot()
 
     def enable_coil_ed(self):
         self.view.tl_w.coil_control.del_coil_btn.setDisabled(False)
