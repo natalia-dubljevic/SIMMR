@@ -30,9 +30,9 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.tl_w, 0, 0)
         self.tr_w = View_Widget(self.window)
         self.layout.addWidget(self.tr_w, 0, 1)
-        self.bl_w = QLabel('Placeholder', self.window)
+        self.bl_w = Fields_View_Widget(self.window)
         self.layout.addWidget(self.bl_w, 1, 0)
-        self.br_w = QLabel('Placeholder', self.window)
+        self.br_w = Mag_Phase_View_Widget(self.window)
         self.layout.addWidget(self.br_w, 1, 1)
 
         self.showMaximized() # Open GUI to maximized screen size
@@ -78,6 +78,26 @@ class View_Widget(QWidget):
 
     def __init__(self, parent : QWidget):
         super(View_Widget, self).__init__(parent)
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+class Mag_Phase_View_Widget(QWidget):
+
+    def __init__(self, parent : QWidget):
+        super(Mag_Phase_View_Widget, self).__init__(parent)
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+class Fields_View_Widget(QWidget):
+
+    def __init__(self, parent : QWidget):
+        super(Fields_View_Widget, self).__init__(parent)
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout()

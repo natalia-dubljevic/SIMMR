@@ -1,19 +1,24 @@
 from math import sqrt
 import numpy as np
 
+from gui import MainWindow
+
 from scanner import Scanner
 from coil import Coil
 from lines import Straight, Curved
 from segment import Segment
+import sim_utils
 
 import matplotlib.pyplot as plt
 
 class Controller:
 
-    def __init__(self, view):
+    def __init__(self, view : MainWindow):
         self.view = view
         self.coil_focus_index = None
         self.segment_focus_index = None
+        self.editing = False
+        self.user_inputs = []
 
         # Button Connections
         self.view.mouse_clicked_outside.connect(self.handle_mouse_clicked_outside)
@@ -80,11 +85,12 @@ class Controller:
         self.update_coil_control()
 
     def handle_edit_coil_clicked(self):
+
         self.view.tl_w.coil_design.del_seg_btn.setDisabled(True)
         self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
         self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
 
-        self.update_coil_focus(self.coil_focus_index) # Sets the focus index to be the last
+        self.update_coil_focus(self.coil_focus_index) # Sets the focus index
         self.update_coil_design()
         self.view.tl_w.stack.setCurrentIndex(3)
 
@@ -104,59 +110,116 @@ class Controller:
         self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_delete_segment_clicked(self):
+        # NEW ADDITION:
+        del self.user_inputs[self.coil_focus_index][self.segment_focus_index]
+        self.user_inputs[self.coil_focus_index].append(None)
+        # END NEW ADDITION:
         del self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index]
         self.update_segment_focus(None)
         self.update_coil_design()
 
     def handle_edit_segment_clicked(self):
-        print('edit, focus segment : ' + str(self.segment_focus_index + 1))
+        self.editing = True
+
+        if len(self.user_inputs[self.coil_focus_index][self.segment_focus_index]) == 6: # Segment being loaded is straight
+            self.view.tl_w.coil_design.switch_to_straight()
+        elif len(self.user_inputs[self.coil_focus_index][self.segment_focus_index]) == 13: 
+            self.view.tl_w.coil_design.switch_to_curved()
+
+        self.view.tl_w.coil_design.show_segment_inputs(self.user_inputs[self.coil_focus_index][self.segment_focus_index])
+        self.view.tl_w.coil_design.seg_edit_gb.setDisabled(False)
 
     def handle_add_segment_clicked(self):
+        self.editing = False
+
+        self.view.tl_w.coil_design.clear_all_text()
         self.view.tl_w.coil_design.seg_edit_gb.setDisabled(False)
 
     def handle_straight_seg_clicked(self):
-        self.view.tl_w.coil_design.seg_edit_curved.setChecked(False)
-        self.view.tl_w.coil_design.seg_edit_stack.setCurrentIndex(0)  
-        self.view.tl_w.coil_design.seg_edit_stack.show()
+        self.view.tl_w.coil_design.switch_to_straight()
 
     def handle_curved_seg_clicked(self):
-        self.view.tl_w.coil_design.seg_edit_straight.setChecked(False) 
-        self.view.tl_w.coil_design.seg_edit_stack.setCurrentIndex(1) 
-        self.view.tl_w.coil_design.seg_edit_stack.show()
+        self.view.tl_w.coil_design.switch_to_curved()
 
     def handle_cancel_seg_clicked(self):
+        self.view.tl_w.coil_design.clear_all_text()
+        self.editing = False
+
         self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
         self.view.tl_w.coil_design.add_seg_btn.setChecked(False)
+        self.update_segment_focus(None)
 
     def handle_confirm_seg_clicked(self, seg : list):
 
-        if len(seg) == 6: # Straight Segment
-            line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
+        if self.editing == False:
+            # Storing input values
+            if len(self.user_inputs) <= self.coil_focus_index:
+                self.user_inputs.append([seg])
+            else:
+                self.user_inputs[self.coil_focus_index].append(seg)
 
-            self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, 0, 1)) # Add segment
+            if len(seg) == 6: # Straight Segment
+                line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
 
-        elif len(seg) == 13: # Curved Segment
-            c_x, c_y, c_z = seg[0], seg[1], seg[2]
-            r1_x, r1_y, r1_z, r1_mag = seg[3], seg[4], seg[5], seg[6]
-            r2_x, r2_y, r2_z, r2_mag = seg[7], seg[8], seg[9], seg[10]
-            p_min, p_max = seg[11], seg[12]
-            r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
-            r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
-            r1_mult = r1_norm * r1_mag
-            r2_mult = r2_norm * r2_mag
-            r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
-            r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
-            line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
-        
-            self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+                self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, 0, 1)) # Add segment
 
-        else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
-            raise ValueError('Incompatible list size passed for segment creation')
+            elif len(seg) == 13: # Curved Segment
+                c_x, c_y, c_z = seg[0], seg[1], seg[2]
+                r1_x, r1_y, r1_z, r1_mag = seg[3], seg[4], seg[5], seg[6]
+                r2_x, r2_y, r2_z, r2_mag = seg[7], seg[8], seg[9], seg[10]
+                p_min, p_max = seg[11], seg[12]
+                r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
+                r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
+                r1_mult = r1_norm * r1_mag
+                r2_mult = r2_norm * r2_mag
+                r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
+                r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
+            
+                self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+
+            else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
+                raise ValueError('Incompatible list size passed for segment creation')
+            
+        else: # Modifying a previously creating segment (i.e., editing a segment)
+             # Storing input values
+            self.user_inputs[self.coil_focus_index][self.segment_focus_index] = seg
+
+            if len(seg) == 6: # Straight Segment
+                line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
+
+                self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index] = (Segment(line, 0, 1)) # Add segment
+
+            elif len(seg) == 13: # Curved Segment
+                c_x, c_y, c_z = seg[0], seg[1], seg[2]
+                r1_x, r1_y, r1_z, r1_mag = seg[3], seg[4], seg[5], seg[6]
+                r2_x, r2_y, r2_z, r2_mag = seg[7], seg[8], seg[9], seg[10]
+                p_min, p_max = seg[11], seg[12]
+                r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
+                r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
+                r1_mult = r1_norm * r1_mag
+                r2_mult = r2_norm * r2_mag
+                r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
+                r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
+            
+                self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index] = (Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+
+            else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
+                raise ValueError('Incompatible list size passed for segment creation')  
+
+            self.editing = False         
 
         self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
         self.view.tl_w.coil_design.add_seg_btn.setChecked(False)
 
         self.update_coil_design()
+
+    def show_fields_plot(self):
+        pass
+
+    def show_mag_phase_plot(self):
+        pass
 
     def update_coil_control(self):
         self.update_coil_scroll()
@@ -185,13 +248,17 @@ class Controller:
     def update_coil_design(self):
         self.update_segment_scroll()
         self.show_coil_plot()
+        self.view.tl_w.coil_design.clear_all_text()
 
     def update_segment_scroll(self):
         fns = []
         low_lims = []
         up_lims = []
         for segment in self.scanner.coils[self.coil_focus_index].segments:
-            fns.append(str(segment.line_fn.fn))
+            if type(segment.line_fn) == Curved:
+                fns.append('Curved')
+            else:
+                fns.append('Straight')
             low_lims.append(segment.low_lim)
             up_lims.append(segment.up_lim)
         

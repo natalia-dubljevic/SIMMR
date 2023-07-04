@@ -19,7 +19,7 @@ class CoilDesignUI(QWidget):
     segment_clicked = pyqtSignal(int)
 
     class SelectableSegmentWidget(QWidget):
-        def __init__(self, outer, index : int, fn : str, low_lim : float, up_lim : float):
+        def __init__(self, outer, index : int, type : str, low_lim : float, up_lim : float):
             super().__init__()
 
             self.outer = outer
@@ -32,7 +32,7 @@ class CoilDesignUI(QWidget):
             coil_label = 'Segment ' + str(index + 1)
             self.lo.addWidget(QLabel(coil_label))
 
-            function_label = 'Line: ' + fn
+            function_label = 'Type: ' + type
             self.lo.addWidget(QLabel(function_label))
 
             low_lim_label = 'Lower Limit: ' + str(low_lim)
@@ -120,7 +120,7 @@ class CoilDesignUI(QWidget):
         btns_row_lo = QHBoxLayout()
         self.cancel_seg_btn = QPushButton('Cancel')
         self.cancel_seg_btn.clicked.connect(self.cancel_seg_clicked)
-        self.confirm_seg_btn = QPushButton('Create Segment')
+        self.confirm_seg_btn = QPushButton('Confirm')
         self.confirm_seg_btn.clicked.connect(self.confirm_segment_pressed)
         btns_row_lo.addWidget(self.cancel_seg_btn)
         btns_row_lo.addWidget(self.confirm_seg_btn)
@@ -157,32 +157,25 @@ class CoilDesignUI(QWidget):
 
         return False # If input is not valid
     
+    def show_segment_inputs(self, inputs : list):
+        if self.seg_edit_straight.isChecked() == True:
+            self.straight_seg_editor.fill_text_prompts(inputs)
+        elif self.seg_edit_curved.isChecked() == True:
+            self.curved_seg_editor.fill_text_prompts(inputs)
+
+        return False # If input is not valid
+    
+    def clear_all_text(self):
+        self.straight_seg_editor.clear_text_prompts()
+        self.curved_seg_editor.clear_text_prompts()
+
     def confirm_segment_pressed(self):
         if (self.seg_edit_straight.isChecked() and self.straight_seg_editor.input_is_valid()
             or self.seg_edit_curved.isChecked() and self.curved_seg_editor.input_is_valid()):
             # Input should be valid
             self.confirm_seg_clicked.emit(self.parse_segment())
 
-            self.straight_seg_editor.init_point_x_le.clear()
-            self.straight_seg_editor.init_point_y_le.clear()
-            self.straight_seg_editor.init_point_z_le.clear()
-            self.straight_seg_editor.end_point_x_le.clear()
-            self.straight_seg_editor.end_point_y_le.clear()
-            self.straight_seg_editor.end_point_z_le.clear()
-
-            self.curved_seg_editor.ctr_x_le.clear()
-            self.curved_seg_editor.ctr_y_le.clear()
-            self.curved_seg_editor.ctr_z_le.clear()
-            self.curved_seg_editor.r1_x_comp_le.clear()
-            self.curved_seg_editor.r1_y_comp_le.clear()
-            self.curved_seg_editor.r1_z_comp_le.clear()
-            self.curved_seg_editor.r1_mag_le.clear()
-            self.curved_seg_editor.r2_x_comp_le.clear()
-            self.curved_seg_editor.r2_y_comp_le.clear()
-            self.curved_seg_editor.r2_z_comp_le.clear()
-            self.curved_seg_editor.r2_mag_le.clear()
-            self.curved_seg_editor.par_min_le.clear()
-            self.curved_seg_editor.par_max_le.clear()
+            self.clear_all_text()
 
     def update_segments(self, fns : list, low_lims : list, up_lims : list):
 
@@ -203,6 +196,20 @@ class CoilDesignUI(QWidget):
     def remove_highlight(self, index : int):
         if index != None and self.coil_seg_sa_w.layout().itemAt(index) != None:
             self.coil_seg_sa_w.layout().itemAt(index).widget().setStyleSheet('background : yellow')
+
+    def switch_to_straight(self):
+        if not self.seg_edit_straight.isChecked():
+            self.seg_edit_straight.setChecked(True)
+        self.seg_edit_curved.setChecked(False)
+        self.seg_edit_stack.setCurrentIndex(0)  
+        self.seg_edit_stack.show()
+
+    def switch_to_curved(self):
+        if not self.seg_edit_curved.isChecked():
+            self.seg_edit_curved.setChecked(True)
+        self.seg_edit_straight.setChecked(False) 
+        self.seg_edit_stack.setCurrentIndex(1) 
+        self.seg_edit_stack.show()
             
                 
 class StraightSegmentEditor(QWidget):
@@ -246,16 +253,19 @@ class StraightSegmentEditor(QWidget):
         self.end_point_z_le = QLineEdit()
         s_gb2.layout().itemAt(2).addWidget(self.end_point_z_le)
 
-        # s_gb3 = QGroupBox('Direction Vector Multiplication Factor')
-        # self.layout().addWidget(s_gb3)
-        # s_gb3.setLayout(QHBoxLayout())
-        # s_gb3.layout().addLayout(QVBoxLayout())
-        # s_gb3.layout().itemAt(0).addWidget(QLabel('Multiplication Factor'))
-        # self.str_mul_fac = QLineEdit()
-        # s_gb3.layout().itemAt(0).addWidget(self.str_mul_fac)
-        # s_gb3.layout().addLayout(QVBoxLayout())
-        # s_gb3.layout().itemAt(1).addWidget(QLabel('Segment Length'))
-        # s_gb3.layout().itemAt(1).addWidget(QLabel('Test'))
+        self.text_prompts = [self.init_point_x_le, self.init_point_y_le, self.init_point_z_le,
+                             self.end_point_x_le, self.end_point_y_le, self.end_point_z_le]
+        
+    def clear_text_prompts(self):
+        for text in self.text_prompts:
+            text.clear()
+
+    def fill_text_prompts(self, inputs : list):
+        if len(self.text_prompts) == len(inputs): # Double check list size correct
+            for i in range(len(inputs)):
+                self.text_prompts[i].setText(str(inputs[i]))
+        else: # Should never happen if controller works
+            raise ValueError('Incorrect list size for given text prompts')
 
     def input_is_valid(self):
         if (self.init_point_x_le.hasAcceptableInput()
@@ -349,6 +359,22 @@ class CurvedSegmentEditor(QWidget):
         c_gb4_lo.itemAt(1).addWidget(QLabel('Maximum'))
         self.par_max_le = QLineEdit()
         c_gb4_lo.itemAt(1).addWidget(self.par_max_le)
+
+        self.text_prompts = [self.ctr_x_le, self.ctr_y_le, self.ctr_z_le,
+                             self.r1_x_comp_le, self.r1_y_comp_le, self.r1_z_comp_le, self.r1_mag_le,
+                             self.r2_x_comp_le, self.r2_y_comp_le, self.r2_z_comp_le, self.r2_mag_le,
+                             self.par_min_le, self.par_max_le]
+        
+    def clear_text_prompts(self):
+        for text in self.text_prompts:
+            text.clear()
+
+    def fill_text_prompts(self, inputs : list):
+        if len(self.text_prompts) == len(inputs): # Double check list size correct
+            for i in range(len(inputs)):
+                self.text_prompts[i].setText(str(inputs[i]))
+        else: # Should never happen if controller works
+            raise ValueError('Incorrect list size for given text prompts')
 
     def input_is_valid(self):
         if (self.ctr_x_le.hasAcceptableInput()
