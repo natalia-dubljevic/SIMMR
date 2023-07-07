@@ -35,6 +35,7 @@ class Scanner:
         ----------
         bbox : list
             6-element list representing the bounding box for the scanner's magnetic field
+            (x-min, x-max, y-min, y-max, z-min, z-max)
         vol_res : list
             3-element list representing the volume resolution (the "granularity" of the simulated field)
         coils : list, optional

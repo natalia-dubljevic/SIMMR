@@ -45,7 +45,7 @@ class Coil:
         from scanner import Scanner
         self.scanner : Scanner = None # Link coil to its 'parent' scanner - for access to self.scanner.bbox, self.scanner.vol_res, etc.
     
-    def plot_coil(self, ax : plt.axes) -> bool:
+    def plot_coil(self, ax : plt.axes, focus : int = None) -> bool:
         '''
         Generate a 3D plot of a coil on a passed pyplot axis
 
@@ -53,6 +53,8 @@ class Coil:
         ----------
         ax : plt.axes
             Pyplot axis upon which to plot
+        focus : int - Optional
+            Index for focus. Set to None by default
         
         Returns
         -------
@@ -61,8 +63,18 @@ class Coil:
         '''
 
         for segment in self.segments:
+
             x_coords, y_coords, z_coords = segment.get_coords()
-            ax.plot(x_coords, y_coords, z_coords, c='m')
+
+            # if focus != None:
+            #     if segment == self.segments[focus]:
+            #         ax.plot(x_coords, y_coords, z_coords, c = 'black')
+            #     else:
+            #         ax.plot(x_coords, y_coords, z_coords, c = 'm')
+            # else:
+            #     ax.plot(x_coords, y_coords, z_coords, c = 'm')
+
+            ax.plot(x_coords, y_coords, z_coords, c = 'm')
 
             # Add an arrow to the midpoint to give the direction
             n = len(x_coords) // 2
@@ -170,9 +182,9 @@ class Coil:
             dBzdt = smp.lambdify([t, x, y, z], integrand[2])
 
             # Add small tolerance to endpoint so it's included
-            x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[3] + 1e-10, self.scanner.vol_res[0])
-            y_dim = np.arange(self.scanner.bbox[1], self.scanner.bbox[4] + 1e-10, self.scanner.vol_res[1])
-            z_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
+            x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[1] + 1e-10, self.scanner.vol_res[0])
+            y_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[3] + 1e-10, self.scanner.vol_res[1])
+            z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
             xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
             B_fields.append(sim_utils.B(segment.low_lim, segment.up_lim, dBxdt, dBydt, dBzdt, xv, yv, zv))

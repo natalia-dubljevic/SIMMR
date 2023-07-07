@@ -10,6 +10,8 @@ from segment import Segment
 import sim_utils
 
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class Controller:
 
@@ -110,10 +112,8 @@ class Controller:
         self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_delete_segment_clicked(self):
-        # NEW ADDITION:
         del self.user_inputs[self.coil_focus_index][self.segment_focus_index]
         self.user_inputs[self.coil_focus_index].append(None)
-        # END NEW ADDITION:
         del self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index]
         self.update_segment_focus(None)
         self.update_coil_design()
@@ -216,10 +216,132 @@ class Controller:
         self.update_coil_design()
 
     def show_fields_plot(self):
-        pass
+
+        B_field = self.scanner.coils[self.coil_focus_index].B_volume() 
+
+        slice = 'z'
+        slice_loc = 0
+
+        Bx = B_field[0, :, :, :]
+        By = B_field[1, :, :, :]
+        Bz = B_field[2, :, :, :]
+
+        x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[1] + 1e-10, self.scanner.vol_res[0])
+        y_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[3] + 1e-10, self.scanner.vol_res[1])
+        z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
+        xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
+
+        Bx_slice = sim_utils.get_slice(Bx, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        By_slice = sim_utils.get_slice(By, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        Bz_slice = sim_utils.get_slice(Bz, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+
+        if slice == 'x':
+            ax1_label, ax2_label = 'y', 'z'
+            ax2 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif slice == 'y':
+            ax1_label, ax2_label = 'x', 'z'
+            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif slice == 'z':
+            ax1_label, ax2_label = 'x', 'y'
+            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+
+        vmin = min(np.min(Bx_slice), np.min(By_slice), np.min(Bz_slice))
+        vmax = max(np.max(Bx_slice), np.max(By_slice), np.max(Bz_slice))
+        norm = mpl.colors.TwoSlopeNorm(vmin=vmin, vcenter=0., vmax=vmax)
+
+
+        self.view.bl_w.axes[0].contourf(ax2, ax1, Bx_slice, levels=20, norm=norm, cmap='RdBu_r')
+        self.view.bl_w.axes[0].set_title(r'$B_x$')
+        self.view.bl_w.axes[0].set_xlabel(ax1_label + " (cm)")
+        self.view.bl_w.axes[0].set_ylabel(ax2_label + " (cm)")
+        self.view.bl_w.axes[0].set_aspect('equal')
+
+        self.view.bl_w.axes[1].contourf(ax2, ax1, By_slice, levels=20, norm=norm, cmap='RdBu_r')
+        self.view.bl_w.axes[1].set_title(r'$B_y$')
+        self.view.bl_w.axes[1].set_xlabel(ax2_label+ " (cm)")
+        self.view.bl_w.axes[1].set_ylabel(ax1_label + " (cm)")
+        self.view.bl_w.axes[1].set_aspect('equal')
+
+        self.view.bl_w.axes[2].contourf(ax2, ax1, Bz_slice, levels=20, norm=norm, cmap='RdBu_r')
+        self.view.bl_w.axes[2].set_title(r'$B_z$')
+        self.view.bl_w.axes[2].set_xlabel(ax1_label + " (cm)")
+        self.view.bl_w.axes[2].set_ylabel(ax2_label + " (cm)")
+        self.view.bl_w.axes[2].set_aspect('equal')
+
+        cax = self.view.bl_w.figure.add_axes([self.view.bl_w.axes[2].get_position().x1 + 0.1, 
+                                              self.view.bl_w.axes[2].get_position().y0, 0.02, 
+                                              self.view.bl_w.axes[2].get_position().y1 - self.view.bl_w.axes[2].get_position().y0])
+        plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap='RdBu_r'), cax=cax)
+        
+        self.view.bl_w.canvas.draw()
 
     def show_mag_phase_plot(self):
-        pass
+
+        B_field = self.scanner.coils[self.coil_focus_index].B_volume() 
+        B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]    
+
+        slice = 'z'
+        slice_loc = 0
+
+        x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[1] + 1e-10, self.scanner.vol_res[0])
+        y_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[3] + 1e-10, self.scanner.vol_res[1])
+        z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
+        xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
+
+        B_slice = sim_utils.get_slice(B_complex, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        B_mag = np.abs(B_slice)
+        B_phase = np.angle(B_slice)
+
+        if slice == 'x':
+            ax1_label, ax2_label = 'y', 'z'
+            ax2 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif slice == 'y':
+            ax1_label, ax2_label = 'x', 'z'
+            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif slice == 'z':
+            ax1_label, ax2_label = 'x', 'y'
+            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+
+        divider1 = make_axes_locatable(self.view.br_w.figure.axes[0])
+        cax1 = divider1.append_axes('right', size='5%', pad=0.05)
+        divider2 = make_axes_locatable(self.view.br_w.figure.axes[1])
+        cax2 = divider2.append_axes('right', size='5%', pad=0.05)
+
+        im1 = self.view.br_w.figure.axes[0].contourf(ax2, ax1, B_mag, levels=20)
+        self.view.br_w.figure.axes[0].set_title('Magnitude')
+        self.view.br_w.figure.axes[0].set_xlabel(ax1_label + " (cm)")
+        self.view.br_w.figure.axes[0].set_ylabel(ax2_label + " (cm)")
+        self.view.br_w.figure.axes[0].set_aspect('equal')
+
+        im2 = self.view.br_w.figure.axes[1].contourf(ax2, ax1, B_phase, levels=20)
+        self.view.br_w.figure.axes[1].set_title('Phase')
+        self.view.br_w.figure.axes[1].set_xlabel(ax1_label  + " (cm)")
+        self.view.br_w.figure.axes[1].set_ylabel(ax2_label + " (cm)")
+        self.view.br_w.figure.axes[1].set_aspect('equal')
+
+        self.view.br_w.figure.colorbar(im1, cax=cax1, orientation='vertical')
+        self.view.br_w.figure.colorbar(im2, cax=cax2, orientation='vertical') 
+
+        self.view.br_w.canvas.draw()  
+
+    def clear_bottom_plots(self):
+        for ax in self.view.bl_w.figure.axes:
+            ax.cla()
+        self.view.bl_w.canvas.draw()
+        for ax in self.view.br_w.axes:
+            ax.cla()
+        self.view.br_w.canvas.draw()
+
+    def show_bottom_plots(self):
+        self.clear_bottom_plots()
+        self.show_fields_plot()
+        self.show_mag_phase_plot()
 
     def update_coil_control(self):
         self.update_coil_scroll()
@@ -233,15 +355,10 @@ class Controller:
         self.view.tl_w.coil_control.update_coils(seg_n_list)
 
     def show_scanner_plot(self):
-        self.view.tr_w.figure.clf()
-
-        ax = self.view.tr_w.figure.add_subplot(111, projection='3d')
-        ax.set_xlabel("$x$")
-        ax.set_ylabel("$y$")
-        ax.set_zlabel("$z$")
+        self.view.tr_w.ax.cla()
 
         for coil in self.scanner.coils:
-            coil.plot_coil(ax)
+            coil.plot_coil(self.view.tr_w.ax)
         
         self.view.tr_w.canvas.draw()
 
@@ -249,6 +366,10 @@ class Controller:
         self.update_segment_scroll()
         self.show_coil_plot()
         self.view.tl_w.coil_design.clear_all_text()
+        if len(self.scanner.coils) >= 1 and len(self.scanner.coils[-1].segments) >= 1:
+            self.show_bottom_plots()
+        else:
+            self.clear_bottom_plots()
 
     def update_segment_scroll(self):
         fns = []
@@ -265,14 +386,9 @@ class Controller:
         self.view.tl_w.coil_design.update_segments(fns, low_lims, up_lims)
             
     def show_coil_plot(self):
-        self.view.tr_w.figure.clf()
+        self.view.tr_w.ax.cla()
 
-        ax = self.view.tr_w.figure.add_subplot(111, projection='3d')
-        ax.set_xlabel("$x$")
-        ax.set_ylabel("$y$")
-        ax.set_zlabel("$z$")
-
-        self.scanner.coils[self.coil_focus_index].plot_coil(ax)
+        self.scanner.coils[self.coil_focus_index].plot_coil(self.view.tr_w.ax, self.coil_focus_index)
         
         self.view.tr_w.canvas.draw()        
 
@@ -283,11 +399,12 @@ class Controller:
 
         if self.coil_focus_index == None:
             self.disable_coil_ed()
+            self.clear_bottom_plots()
         else:
             self.enable_coil_ed()
             self.view.tl_w.coil_control.highlight_selected(self.coil_focus_index)
             if len(self.scanner.coils[self.coil_focus_index].segments) >= 1:
-                self.show_fields_plot()
+                self.show_bottom_plots()
 
     def enable_coil_ed(self):
         self.view.tl_w.coil_control.del_coil_btn.setDisabled(False)

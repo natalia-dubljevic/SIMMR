@@ -79,16 +79,12 @@ class View_Widget(QWidget):
     def __init__(self, parent : QWidget):
         super(View_Widget, self).__init__(parent)
         self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
 
-class Mag_Phase_View_Widget(QWidget):
+        self.ax = self.figure.add_subplot(111, projection='3d')
+        self.ax.set_xlabel("$x$")
+        self.ax.set_ylabel("$y$")
+        self.ax.set_zlabel("$z$")
 
-    def __init__(self, parent : QWidget):
-        super(Mag_Phase_View_Widget, self).__init__(parent)
-        self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout()
         layout.addWidget(self.canvas)
@@ -98,7 +94,17 @@ class Fields_View_Widget(QWidget):
 
     def __init__(self, parent : QWidget):
         super(Fields_View_Widget, self).__init__(parent)
-        self.figure = plt.figure()
+        self.figure, self.axes = plt.subplots(nrows=1, ncols=3)
+        self.canvas = FigureCanvas(self.figure)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+class Mag_Phase_View_Widget(QWidget):
+
+    def __init__(self, parent : QWidget):
+        super(Mag_Phase_View_Widget, self).__init__(parent)
+        self.figure, self.axes = plt.subplots(nrows=1, ncols=2)
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout()
         layout.addWidget(self.canvas)
