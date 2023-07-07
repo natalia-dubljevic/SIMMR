@@ -107,8 +107,8 @@ class Controller:
         self.view.tl_w.stack.setCurrentIndex(3)
 
     def handle_back_clicked(self):
-        self.update_coil_control()
         self.update_coil_focus(None)
+        self.update_coil_control()
         self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_delete_segment_clicked(self):
@@ -358,7 +358,10 @@ class Controller:
         self.view.tr_w.ax.cla()
 
         for coil in self.scanner.coils:
-            coil.plot_coil(self.view.tr_w.ax)
+            if (self.coil_focus_index != None) and (self.scanner.coils[self.coil_focus_index] == coil):
+                coil.plot_coil(self.view.tr_w.ax, True)
+            else:
+                coil.plot_coil(self.view.tr_w.ax)
         
         self.view.tr_w.canvas.draw()
 
