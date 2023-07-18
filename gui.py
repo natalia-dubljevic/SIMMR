@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel,
-                             QGridLayout, QStackedWidget)
+                             QGridLayout, QStackedWidget, QMenu, QAction)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator
 
@@ -15,11 +15,17 @@ from coil_design_ui import CoilDesignUI
 class MainWindow(QMainWindow):
 
     mouse_clicked_outside = pyqtSignal()
+    save_clicked = QAction('Save')
 
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("SimMR") # Set main window title
+
+        self.menu = self.menuBar()
+        self.save_menu = self.menu.addMenu('File')
+        self.setMenuBar(self.menu)
+        self.save_menu.addAction(self.save_clicked)
 
         self.window = QWidget()
         self.setCentralWidget(self.window)

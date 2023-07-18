@@ -144,17 +144,17 @@ def get_slice(data_volume: np.ndarray, slice: str, slice_loc: float,
         2D slice taken from data_volume at the desired location
     '''
     if slice.lower() == 'x':
-        x = np.arange(bbox[0], bbox[3] + 1e-10, vol_res[0])
+        x = np.arange(bbox[0], bbox[1] + 1e-10, vol_res[0])
         min_ind = np.argmin(np.abs(x - slice_loc))
         return data_volume[min_ind, :, :]
     
     elif slice.lower() == 'y':
-        y = np.arange(bbox[1], bbox[4] + 1e-10, vol_res[1])
+        y = np.arange(bbox[2], bbox[3] + 1e-10, vol_res[1])
         min_ind = np.argmin(np.abs(y - slice_loc))
         return data_volume[:, min_ind, :]
     
     elif slice.lower() == 'z':
-        z = np.arange(bbox[2], bbox[5] + 1e-10, vol_res[2])
+        z = np.arange(bbox[4], bbox[5] + 1e-10, vol_res[2])
         min_ind = np.argmin(np.abs(z - slice_loc))
         return data_volume[:, :, min_ind]
     
@@ -185,9 +185,9 @@ def plot_mag_phase(B_complex : np.ndarray, slice: str, slice_loc: float,
     -------
     none
     '''
-    x_dim = np.arange(bbox[0], bbox[3] + 1e-10, vol_res[0])
-    y_dim = np.arange(bbox[1], bbox[4] + 1e-10, vol_res[1])
-    z_dim = np.arange(bbox[2], bbox[5] + 1e-10, vol_res[2])
+    x_dim = np.arange(bbox[0], bbox[1] + 1e-10, vol_res[0])
+    y_dim = np.arange(bbox[2], bbox[3] + 1e-10, vol_res[1])
+    z_dim = np.arange(bbox[4], bbox[5] + 1e-10, vol_res[2])
     xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
     B_slice = get_slice(B_complex, slice, slice_loc, vol_res=vol_res, bbox=bbox)
@@ -235,7 +235,7 @@ def plot_mag_phase(B_complex : np.ndarray, slice: str, slice_loc: float,
     
 def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float, 
                 vol_res=(1, 1, 1), bbox=(-1, -1, -1, 2, 2, 2), 
-                filename='B_field_components_stephen_test.png') -> None:
+                filename='B_field_components_stephen_test.png'):
     '''Plot the x, y, and z components of the Magnetic field.
 
     Parameters
@@ -264,9 +264,9 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
     By = B_field[1, :, :, :]
     Bz = B_field[2, :, :, :]
 
-    x_dim = np.arange(bbox[0], bbox[3] + 1e-10, vol_res[0])
-    y_dim = np.arange(bbox[1], bbox[4] + 1e-10, vol_res[1])
-    z_dim = np.arange(bbox[2], bbox[5] + 1e-10, vol_res[2])
+    x_dim = np.arange(bbox[0], bbox[1] + 1e-10, vol_res[0])
+    y_dim = np.arange(bbox[2], bbox[3] + 1e-10, vol_res[1])
+    z_dim = np.arange(bbox[4], bbox[5] + 1e-10, vol_res[2])
     xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
     Bx_slice = get_slice(Bx, slice, slice_loc, vol_res=vol_res, bbox=bbox)
@@ -315,4 +315,5 @@ def plot_fields(B_field : np.ndarray, slice: str, slice_loc: float,
     cax = fig.add_axes([axes[2].get_position().x1 + 0.1, axes[2].get_position().y0, 0.02, axes[2].get_position().y1 - axes[2].get_position().y0])
     plt.colorbar(mpl.cm.ScalarMappable(norm=norm, cmap='RdBu_r'), cax=cax)
     # fig.tight_layout()
-    plt.savefig(filename, bbox_inches='tight', dpi=250)
+    # plt.savefig(filename, bbox_inches='tight', dpi=250)
+    return cax

@@ -20,8 +20,6 @@ class Coil:
         List of line segments that plot the coil
     scanner : Scanner
         The 'parent' scanner which the coil object is a part of
-    closed: bool
-        Boolean representing whether the segments form a 'closed' loop
     
     Methods
     -------
@@ -33,19 +31,19 @@ class Coil:
         Calculate magnetic field at every point in self.scanner.bbox volume resulting from coil
     '''
 
-    def __init__(self):
+    def __init__(self, segments = None, B_vol = None):
         '''
         Parameters
         ----------
         segments : list[Segment]
             List of line segments that plot the coil; defaults to an empty list
         '''
-        self.segments = [] # List of line segments
-        self.closed = False
+        self.segments = segments if segments is not None else [] # List of line segments
+        self.B_vol = B_vol if B_vol is not None else None
         from scanner import Scanner
         self.scanner : Scanner = None # Link coil to its 'parent' scanner - for access to self.scanner.bbox, self.scanner.vol_res, etc.
     
-    def plot_coil(self, ax : plt.axes, focus : int = None) -> bool:
+    def plot_coil(self, ax : plt.axes, coil_focus : bool = False, seg_focus : int = None) -> bool:
         '''
         Generate a 3D plot of a coil on a passed pyplot axis
 
@@ -53,8 +51,10 @@ class Coil:
         ----------
         ax : plt.axes
             Pyplot axis upon which to plot
-        focus : int - Optional
-            Index for focus. Set to None by default
+        coil_focus : bool - Optional
+            Boolean describing whether coil being plotted is a focus plot
+        seg_focus : int - Optional
+            Integer representing 
         
         Returns
         -------
@@ -64,17 +64,24 @@ class Coil:
 
         for segment in self.segments:
 
+            # if coil_focus:
+            #     print('branch 1')
+            #     seg_color = 'magenta'
+            # elif seg_focus == None:
+            #     print('branch 2')
+            #     seg_color = 'grey'
+            # else:
+            #     if self.segments[seg_focus] == segment:
+            #         print('branch 3')
+            #         seg_color = 'magenta'
+            #     else:
+            #         print('branch 4')
+            #         seg_color = 'grey'
+            seg_color = 'magenta'
+
             x_coords, y_coords, z_coords = segment.get_coords()
 
-            # if focus != None:
-            #     if segment == self.segments[focus]:
-            #         ax.plot(x_coords, y_coords, z_coords, c = 'black')
-            #     else:
-            #         ax.plot(x_coords, y_coords, z_coords, c = 'm')
-            # else:
-            #     ax.plot(x_coords, y_coords, z_coords, c = 'm')
-
-            ax.plot(x_coords, y_coords, z_coords, c = 'm')
+            ax.plot(x_coords, y_coords, z_coords, color = seg_color)
 
             # Add an arrow to the midpoint to give the direction
             n = len(x_coords) // 2
@@ -107,42 +114,13 @@ class Coil:
         # Check that object passed is a segment
         if type(segment) != Segment:
             raise TypeError('Segment object not passed as argument. Ensure passed argument is a segment object')
-        
-        # if self.closed == True:
-        #     return False
-
-        # if len(self.segments) >= 1:
-        #     # Check that the 'start' point for the segment is approximately equal to the 'end' point of the previous
-        #     prev_fn = smp.lambdify(self.segments[-1].line_fn.parameter, self.segments[-1].line_fn.fn, modules='numpy')
-        #     xp, yp, zp = prev_fn(self.segments[-1].up_lim)
-
-        #     current_fn = smp.lambdify(segment.line_fn.parameter, segment.line_fn.fn, modules='numpy')
-        #     xc, yc, zc = current_fn(segment.low_lim)
-
-        #     xa = xp - 0.05 <= xc and xc <= xp + 0.05
-        #     ya = yp - 0.05 <= yc and yc <= yp + 0.05
-        #     za = zp - 0.05 <= zc and zc <= zp + 0.05
-
-        #     if not (xa and ya and za):
-        #         return False
-            
-        #     # Check to see if adding the new segment closes the coil loop
-        #     first_fn = smp.lambdify(self.segments[0].line_fn.parameter, self.segments[0].line_fn.fn, modules='numpy')
-        #     xf, yf, zf = first_fn(self.segments[0].low_lim)
-
-        #     xc, yc, zc = current_fn(segment.up_lim)
-
-        #     xl = xf - 0.05 <= xc and xc <= xf + 0.05
-        #     yl = yf - 0.05 <= yc and yc <= yf + 0.05
-        #     zl = zf - 0.05 <= zc and zc <= zf + 0.05
-
-        #     if xl and yl and zl:
-        #         self.closed = True
 
         # Append segment to segments list, once type has been validated
         self.segments.append(segment)
 
         segment.coil = self
+
+        self.B_vol = self.B_volume() # Update B_vol
 
         return True # If addition of segment was successful / didn't throw any errors
 
@@ -161,6 +139,8 @@ class Coil:
             4D volume of magnetic field components at each point in space. Last 
             dimension is size 3 representing x, y, and z components
         '''
+
+        print('executing B_volume')
 
         B_fields = []
         

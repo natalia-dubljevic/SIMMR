@@ -1,5 +1,6 @@
 from math import sqrt
 import numpy as np
+import json
 
 from gui import MainWindow
 
@@ -7,6 +8,7 @@ from scanner import Scanner
 from coil import Coil
 from lines import Straight, Curved
 from segment import Segment
+from encoder import CustomEncoder
 import sim_utils
 
 import matplotlib.pyplot as plt
@@ -17,10 +19,13 @@ class Controller:
 
     def __init__(self, view : MainWindow):
         self.view = view
+        self.scanner = None
         self.coil_focus_index = None
         self.segment_focus_index = None
         self.editing = False
         self.user_inputs = []
+
+        self.view.save_clicked.triggered.connect(self.save_menu_clicked)
 
         # Button Connections
         self.view.mouse_clicked_outside.connect(self.handle_mouse_clicked_outside)
@@ -52,6 +57,9 @@ class Controller:
         self.view.tl_w.coil_design.confirm_seg_clicked.connect(self.handle_confirm_seg_clicked)
         #===================
 
+    def save_menu_clicked(self):
+        self.save_workspace()
+
     def handle_mouse_clicked_outside(self):
         if self.view.tl_w.stack.currentIndex() == 2:
             self.view.tl_w.coil_control.remove_highlight(self.coil_focus_index)
@@ -64,8 +72,14 @@ class Controller:
         self.view.tl_w.stack.setCurrentIndex(1)
 
     def handle_mod_scanner_btn_clicked(self):
-        print('Connected to load scanner button')
-        # Needs implementation
+        self.load_workspace()
+        self.update_coil_control()
+
+        self.show_scanner_plot()
+
+        self.disable_coil_ed()
+
+        self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_init_scanner_clicked(self, bbox : list, vol_res : list):
         self.scanner = Scanner(bbox, vol_res)
@@ -117,6 +131,7 @@ class Controller:
         del self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index]
         self.update_segment_focus(None)
         self.update_coil_design()
+        # Also need to update coil plots
 
     def handle_edit_segment_clicked(self):
         self.editing = True
@@ -216,8 +231,12 @@ class Controller:
         self.update_coil_design()
 
     def show_fields_plot(self):
+        
+        if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
+            print('type not array')
+            return
 
-        B_field = self.scanner.coils[self.coil_focus_index].B_volume() 
+        B_field = self.scanner.coils[self.coil_focus_index].B_vol
 
         slice = 'z'
         slice_loc = 0
@@ -280,7 +299,11 @@ class Controller:
 
     def show_mag_phase_plot(self):
 
-        B_field = self.scanner.coils[self.coil_focus_index].B_volume() 
+        if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
+            print('type not array')
+            return
+
+        B_field = self.scanner.coils[self.coil_focus_index].B_vol
         B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]    
 
         slice = 'z'
@@ -359,25 +382,17 @@ class Controller:
 
         for coil in self.scanner.coils:
             if (self.coil_focus_index != None) and (self.scanner.coils[self.coil_focus_index] == coil):
-                coil.plot_coil(self.view.tr_w.ax, True)
+                coil.plot_coil(self.view.tr_w.ax, True, self.segment_focus_index)
             else:
-                coil.plot_coil(self.view.tr_w.ax)
+                coil.plot_coil(self.view.tr_w.ax, False, self.segment_focus_index)
         
         self.view.tr_w.canvas.draw()
-
-    def update_coil_design(self):
-        self.update_segment_scroll()
-        self.show_coil_plot()
-        self.view.tl_w.coil_design.clear_all_text()
-        if len(self.scanner.coils) >= 1 and len(self.scanner.coils[-1].segments) >= 1:
-            self.show_bottom_plots()
-        else:
-            self.clear_bottom_plots()
 
     def update_segment_scroll(self):
         fns = []
         low_lims = []
         up_lims = []
+
         for segment in self.scanner.coils[self.coil_focus_index].segments:
             if type(segment.line_fn) == Curved:
                 fns.append('Curved')
@@ -385,15 +400,23 @@ class Controller:
                 fns.append('Straight')
             low_lims.append(segment.low_lim)
             up_lims.append(segment.up_lim)
-        
+
         self.view.tl_w.coil_design.update_segments(fns, low_lims, up_lims)
             
     def show_coil_plot(self):
         self.view.tr_w.ax.cla()
+        self.scanner.coils[self.coil_focus_index].plot_coil(self.view.tr_w.ax, False, self.coil_focus_index)
+        self.view.tr_w.canvas.draw()  
 
-        self.scanner.coils[self.coil_focus_index].plot_coil(self.view.tr_w.ax, self.coil_focus_index)
+    def update_coil_design(self):
+        self.update_segment_scroll()
+        self.show_coil_plot()
+        self.view.tl_w.coil_design.clear_all_text()
         
-        self.view.tr_w.canvas.draw()        
+        if len(self.scanner.coils) >= 1 and len(self.scanner.coils[-1].segments) >= 1:
+            self.show_bottom_plots()
+        else:
+            self.clear_bottom_plots()      
 
     def update_coil_focus(self, index : int | None):
         self.view.tl_w.coil_control.remove_highlight(self.coil_focus_index)
@@ -424,7 +447,9 @@ class Controller:
 
         if self.segment_focus_index == None:
             self.disable_segment_ed()
+            self.update_coil_design()   
         else:
+            self.update_coil_design()
             self.enable_segment_ed()
             self.view.tl_w.coil_design.highlight_selected(self.segment_focus_index)
 
@@ -436,3 +461,42 @@ class Controller:
         self.view.tl_w.coil_design.del_seg_btn.setDisabled(True)
         self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
 
+    def save_workspace(self):
+        with open("data.json", "w") as json_file:
+            json.dump(self, json_file, cls = CustomEncoder, indent=4)
+
+    def load_workspace(self):
+        with open("data.json", "r") as json_file:
+            data = json.load(json_file)
+            coils_to_add = []
+            for i in range(len(data['user_inputs'])):
+                segs = []
+
+                for seg in data['user_inputs'][i]:
+                    if len(seg) == 6: # Straight Segment
+                        line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
+
+                        segs.append(Segment(line, 0, 1)) # Add segment
+
+                    elif len(seg) == 13: # Curved Segment
+                        c_x, c_y, c_z = seg[0], seg[1], seg[2]
+                        r1_x, r1_y, r1_z, r1_mag = seg[3], seg[4], seg[5], seg[6]
+                        r2_x, r2_y, r2_z, r2_mag = seg[7], seg[8], seg[9], seg[10]
+                        p_min, p_max = seg[11], seg[12]
+                        r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
+                        r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
+                        r1_mult = r1_norm * r1_mag
+                        r2_mult = r2_norm * r2_mag
+                        r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
+                        r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                        line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
+                    
+                        segs.append(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+
+                    else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
+                        raise ValueError('Incompatible list size passed for segment creation')
+                     
+                coils_to_add.append(Coil(segs, np.array(data['coils'][0][i])))
+
+            self.scanner = Scanner(data['scanner_bbox'], data['scanner_vol_res'], coils_to_add)
+            self.user_inputs = data['user_inputs']

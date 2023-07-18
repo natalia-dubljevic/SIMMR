@@ -134,8 +134,8 @@ import sim_utils
 #---------------------------------------------------------------
 # TESTING FOR SENSITIVITY MAP GENERATION
 
-
-bbox = [2.0, -5.0, -1.0, 6.0, 5.0, 1.0] # set bounding box; min and max of each of x, y, and z-coords ("frame" of magnetic field)
+'''
+bbox = [2.0, 6.0, -5.0, 5.0, -1.0, 1.0] # set bounding box; min and max of each of x, y, and z-coords ("frame" of magnetic field)
 vol_res = [0.1, 0.1, 0.1] # volume resolution; "granularity" of map
 radius = 0.5  # for circles (coil shape)
 
@@ -193,13 +193,44 @@ test_scanner.add_coils(c8)
 test_scanner.plot_coils()
 
 B_field = c1.B_volume() # Choose which coil to generate B_field, etc. for 
+'''
 
-B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]
+# B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]
 
 
-slice = 'z'
-slice_loc = 0
+# slice = 'z'
+# slice_loc = 0
 
-sim_utils.plot_mag_phase(B_complex, slice, slice_loc, vol_res=vol_res, bbox=bbox)
-sim_utils.plot_fields(B_field, slice, slice_loc, vol_res=vol_res, bbox=bbox)
+# sim_utils.plot_mag_phase(B_complex, slice, slice_loc, vol_res=vol_res, bbox=bbox)
+# sim_utils.plot_fields(B_field, slice, slice_loc, vol_res=vol_res, bbox=bbox)
+
+# import multiprocessing
+
+# print('Number of cpu:' + str(multiprocessing.cpu_count()))
+
+# test_input = []
+# for i in range(0, 10000):
+#     test_input.append(i)
+
+# print('test_input created')
+
+# import time
+
+# def task(test_input):
+#     for num in test_input:
+#         num **= num
+
+# time_start = time.time()
+# task(test_input)
+# time_end = time.time()
+# print('Not optimized: ' + str(time_end - time_start) + ' seconds')
+
+# def pool():
+#     with multiprocessing.Pool() as pool:
+#         pool.map(task, test_input)
+
+# time_start = time.time()
+# pool()
+# time_end = time.time()
+# print('Optimized: ' + str(time_end - time_start) + ' seconds')
 
