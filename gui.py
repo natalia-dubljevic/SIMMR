@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel,
                              QGridLayout, QStackedWidget, QMenu, QAction,
-                             QMessageBox)
+                             QMessageBox, QFileDialog)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator
 
@@ -48,15 +48,26 @@ class MainWindow(QMainWindow):
         self.mouse_clicked_outside.emit()
 
     def error_poput(self, title : str, message : str):
-        # Create a QMessageBox with an error message
         error_box = QMessageBox()
         error_box.setIcon(QMessageBox.Critical)
         error_box.setWindowTitle(title)
         error_box.setText(message)
         error_box.setStandardButtons(QMessageBox.Ok)
 
-        # Display the error message box
         error_box.exec_()
+
+    def open_file_dialog(self):
+        file_dialog = QFileDialog()
+        file_dialog.setWindowTitle('Open File')
+        file_dialog.setFileMode(QFileDialog.ExistingFile)
+
+        # Check if the dialog was accepted (a file was selected)
+        if file_dialog.exec_() == QFileDialog.Accepted:
+            selected_files = file_dialog.selectedFiles()
+            # Process the selected file(s)
+            for file_path in selected_files:
+                print('Selected file:', file_path)
+                return file_path
 
 class Control_Panel_Widget(QWidget):
 

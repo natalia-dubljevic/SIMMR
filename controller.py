@@ -472,7 +472,9 @@ class Controller:
 
     def load_workspace(self):
         try:
-            with open("data.json", "r") as json_file:
+            file = self.view.open_file_dialog()    
+
+            with open(file, "r") as json_file:
                 data = json.load(json_file)
                 coils_to_add = []
                 for i in range(len(data['user_inputs'])):
