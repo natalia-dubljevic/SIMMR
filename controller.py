@@ -462,41 +462,49 @@ class Controller:
         self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
 
     def save_workspace(self):
-        with open("data.json", "w") as json_file:
-            json.dump(self, json_file, cls = CustomEncoder, indent=4)
+        try:
+            with open("data.json", "w") as json_file:
+                json.dump(self, json_file, cls = CustomEncoder, indent=4)
+        except Exception as e:
+            print('Error saving workspace')
+            print(e)
 
     def load_workspace(self):
-        with open("data.json", "r") as json_file:
-            data = json.load(json_file)
-            coils_to_add = []
-            for i in range(len(data['user_inputs'])):
-                segs = []
+        try:
+            with open("data.json", "r") as json_file:
+                data = json.load(json_file)
+                coils_to_add = []
+                for i in range(len(data['user_inputs'])):
+                    segs = []
 
-                for seg in data['user_inputs'][i]:
-                    if len(seg) == 6: # Straight Segment
-                        line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
+                    for seg in data['user_inputs'][i]:
+                        if len(seg) == 6: # Straight Segment
+                            line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
 
-                        segs.append(Segment(line, 0, 1)) # Add segment
+                            segs.append(Segment(line, 0, 1)) # Add segment
 
-                    elif len(seg) == 13: # Curved Segment
-                        c_x, c_y, c_z = seg[0], seg[1], seg[2]
-                        r1_x, r1_y, r1_z, r1_mag = seg[3], seg[4], seg[5], seg[6]
-                        r2_x, r2_y, r2_z, r2_mag = seg[7], seg[8], seg[9], seg[10]
-                        p_min, p_max = seg[11], seg[12]
-                        r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
-                        r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
-                        r1_mult = r1_norm * r1_mag
-                        r2_mult = r2_norm * r2_mag
-                        r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
-                        r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
-                        line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
-                    
-                        segs.append(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+                        elif len(seg) == 13: # Curved Segment
+                            c_x, c_y, c_z = seg[0], seg[1], seg[2]
+                            r1_x, r1_y, r1_z, r1_mag = seg[3], seg[4], seg[5], seg[6]
+                            r2_x, r2_y, r2_z, r2_mag = seg[7], seg[8], seg[9], seg[10]
+                            p_min, p_max = seg[11], seg[12]
+                            r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
+                            r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
+                            r1_mult = r1_norm * r1_mag
+                            r2_mult = r2_norm * r2_mag
+                            r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
+                            r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                            line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
+                        
+                            segs.append(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
 
-                    else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
-                        raise ValueError('Incompatible list size passed for segment creation')
-                     
-                coils_to_add.append(Coil(segs, np.array(data['coils'][0][i])))
+                        else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
+                            raise ValueError('Incompatible list size passed for segment creation')
+                        
+                    coils_to_add.append(Coil(segs, np.array(data['coils'][0][i])))
 
-            self.scanner = Scanner(data['scanner_bbox'], data['scanner_vol_res'], coils_to_add)
-            self.user_inputs = data['user_inputs']
+                self.scanner = Scanner(data['scanner_bbox'], data['scanner_vol_res'], coils_to_add)
+                self.user_inputs = data['user_inputs']
+        except Exception as e:
+            print('Error loading workspace')
+            print(e)
