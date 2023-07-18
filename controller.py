@@ -24,6 +24,7 @@ class Controller:
         self.segment_focus_index = None
         self.editing = False
         self.user_inputs = []
+        self.file = None
 
         self.view.save_clicked.triggered.connect(self.save_menu_clicked)
 
@@ -72,14 +73,14 @@ class Controller:
         self.view.tl_w.stack.setCurrentIndex(1)
 
     def handle_mod_scanner_btn_clicked(self):
-        self.load_workspace()
-        self.update_coil_control()
+        if self.load_workspace():
+            self.update_coil_control()
 
-        self.show_scanner_plot()
+            self.show_scanner_plot()
 
-        self.disable_coil_ed()
+            self.disable_coil_ed()
 
-        self.view.tl_w.stack.setCurrentIndex(2)
+            self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_init_scanner_clicked(self, bbox : list, vol_res : list):
         self.scanner = Scanner(bbox, vol_res)
@@ -463,7 +464,10 @@ class Controller:
 
     def save_workspace(self):
         try:
-            with open("data.json", "w") as json_file:
+            if self.file is None:
+                self.file = self.view.save_file_dialog()
+
+            with open(self.file, "w") as json_file:
                 json.dump(self, json_file, cls = CustomEncoder, indent=4)
         except Exception as e:
             print('Error saving workspace')
@@ -472,9 +476,9 @@ class Controller:
 
     def load_workspace(self):
         try:
-            file = self.view.open_file_dialog()    
+            self.file = self.view.open_file_dialog()    
 
-            with open(file, "r") as json_file:
+            with open(self.file, "r") as json_file:
                 data = json.load(json_file)
                 coils_to_add = []
                 for i in range(len(data['user_inputs'])):
@@ -508,7 +512,12 @@ class Controller:
 
                 self.scanner = Scanner(data['scanner_bbox'], data['scanner_vol_res'], coils_to_add)
                 self.user_inputs = data['user_inputs']
+            
+            return True
+        
         except Exception as e:
             print('Error loading workspace')
             print(e)
             self.view.error_poput('Error', 'Error loading workspace')
+
+            return False

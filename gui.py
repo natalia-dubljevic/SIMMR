@@ -68,6 +68,17 @@ class MainWindow(QMainWindow):
             for file_path in selected_files:
                 print('Selected file:', file_path)
                 return file_path
+            
+    def save_file_dialog(self):
+        # Open folder dialog for saving a file
+        file_dialog = QFileDialog()
+        file_dialog.setWindowTitle('Save File')
+        file_dialog.setFileMode(QFileDialog.Directory)
+
+        # Check if the dialog was accepted (a folder was selected)
+        if file_dialog.exec_() == QFileDialog.Accepted:
+            selected_folder = file_dialog.selectedFiles()[0]
+            return selected_folder + '/new_workspace.json'
 
 class Control_Panel_Widget(QWidget):
 
