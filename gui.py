@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel,
-                             QGridLayout, QStackedWidget, QMenu, QAction)
+                             QGridLayout, QStackedWidget, QMenu, QAction,
+                             QMessageBox)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator
 
@@ -45,6 +46,17 @@ class MainWindow(QMainWindow):
 
     def mousePressEvent(self, event):
         self.mouse_clicked_outside.emit()
+
+    def error_poput(self, title : str, message : str):
+        # Create a QMessageBox with an error message
+        error_box = QMessageBox()
+        error_box.setIcon(QMessageBox.Critical)
+        error_box.setWindowTitle(title)
+        error_box.setText(message)
+        error_box.setStandardButtons(QMessageBox.Ok)
+
+        # Display the error message box
+        error_box.exec_()
 
 class Control_Panel_Widget(QWidget):
 

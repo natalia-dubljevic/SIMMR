@@ -468,6 +468,7 @@ class Controller:
         except Exception as e:
             print('Error saving workspace')
             print(e)
+            self.view.error_poput('Error', 'Error saving workspace')
 
     def load_workspace(self):
         try:
@@ -508,3 +509,4 @@ class Controller:
         except Exception as e:
             print('Error loading workspace')
             print(e)
+            self.view.error_poput('Error', 'Error loading workspace')
