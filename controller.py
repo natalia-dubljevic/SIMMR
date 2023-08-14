@@ -57,7 +57,15 @@ class Controller:
 
         self.view.tl_w.coil_design.cancel_seg_clicked.connect(self.handle_cancel_seg_clicked)
         self.view.tl_w.coil_design.confirm_seg_clicked.connect(self.handle_confirm_seg_clicked)
+
+        self.view.tr_w.slice_combo_btn.currentTextChanged.connect(self.slice_button_changed)
         #===================
+
+    def slice_button_changed(self):
+        print('connected')
+        self.slice = self.view.tr_w.slice_combo_btn.currentText()
+        if self.coil_focus_index != None:
+            self.show_bottom_plots()
 
     def save_menu_clicked(self):
         self.save_workspace()
