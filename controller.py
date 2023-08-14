@@ -29,9 +29,6 @@ class Controller:
 
         self.view.save_clicked.triggered.connect(self.save_menu_clicked)
 
-        self.view.tr_w.slice_combo_btn.currentIndexChanged.connect(self.slice_button_changed)
-        self.view.tr_w.slice_loc_btn.editingFinished.connect(self.slice_loc_changed)
-
         # Button Connections
         self.view.mouse_clicked_outside.connect(self.handle_mouse_clicked_outside)
 
@@ -64,15 +61,6 @@ class Controller:
 
     def save_menu_clicked(self):
         self.save_workspace()
-
-    def slice_button_changed(self):
-        self.slice = self.view.tr_w.slice_combo_btn.currentText()
-        if self.coil_focus_index != None:
-            self.show_bottom_plots()
-
-    def slice_loc_changed(self):
-        text = self.view.tr_w.slice_loc_btn.text()
-        print(text)
 
     def handle_mouse_clicked_outside(self):
         if self.view.tl_w.stack.currentIndex() == 2:
