@@ -5,8 +5,12 @@ import sympy as smp
 import matplotlib.quiver as mquiver
 from segment import Segment
 import sim_utils
+import b_calculation
 
-import matplotlib as mpl
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scanner import Scanner
 
 class Coil:
     '''
@@ -31,18 +35,47 @@ class Coil:
         Calculate magnetic field at every point in self.scanner.bbox volume resulting from coil
     '''
 
-    def __init__(self, segments = None, B_vol = None):
+    def __init__(self, segments : list[Segment] = None, scanner : 'Scanner' = None):
         '''
         Parameters
         ----------
         segments : list[Segment]
             List of line segments that plot the coil; defaults to an empty list
+        scanner
+            Scanner object to which the coil 'belongs' 
         '''
-        self.segments = segments if segments is not None else [] # List of line segments
-        self.B_vol = B_vol if B_vol is not None else None
+        segments = segments if segments is not None else []
+        if segments == []:
+            self.segments = segments
+        else:
+            for segment in segments:
+                self.add_segment(segment)
+        self.scanner = None
+        self.B_vol = None
+
+        self.set_scanner(scanner) # Link coil to its 'parent' scanner - for access to self.scanner.bbox, self.scanner.vol_res, etc.
+
+    def set_scanner(self, scanner : 'Scanner'):
+        '''
+        Set the coil's scanner (i.e., the scanner to which it belongs)
+
+        Parameters
+        ----------
+        scanner : Scanner
+            The parameter being passed to set the scanner
+        
+        Returns
+        -------
+        TypeError
+            If passed argument is not a scanner object
+        '''
+
         from scanner import Scanner
-        self.scanner : Scanner = None # Link coil to its 'parent' scanner - for access to self.scanner.bbox, self.scanner.vol_res, etc.
-    
+        if type(scanner) != Scanner and type(scanner) != None:
+            raise TypeError('Scanner object not passed as argument. Ensure passed argument is scanner object')
+        
+        self.scanner = scanner
+
     def plot_coil(self, ax : plt.axes, coil_focus : bool = False, seg_focus : int = None) -> bool:
         '''
         Generate a 3D plot of a coil on a passed pyplot axis
@@ -64,19 +97,6 @@ class Coil:
 
         for segment in self.segments:
 
-            # if coil_focus:
-            #     print('branch 1')
-            #     seg_color = 'magenta'
-            # elif seg_focus == None:
-            #     print('branch 2')
-            #     seg_color = 'grey'
-            # else:
-            #     if self.segments[seg_focus] == segment:
-            #         print('branch 3')
-            #         seg_color = 'magenta'
-            #     else:
-            #         print('branch 4')
-            #         seg_color = 'grey'
             seg_color = 'magenta'
 
             x_coords, y_coords, z_coords = segment.get_coords()
@@ -94,7 +114,7 @@ class Coil:
 
         return True
 
-    def add_segment(self, segment : Segment) -> bool:
+    def add_segment(self, segment : Segment):
         '''
         Validate and append a passed segment to the coil attribute segments
 
@@ -107,22 +127,15 @@ class Coil:
         -------
         TypeError
             If passed argument is not a segment
-        True
-            If segment successfully appended to segment list
         '''
 
-        # Check that object passed is a segment
         if type(segment) != Segment:
             raise TypeError('Segment object not passed as argument. Ensure passed argument is a segment object')
 
-        # Append segment to segments list, once type has been validated
         self.segments.append(segment)
+        segment.set_coil(self)
 
-        segment.coil = self
-
-        self.B_vol = self.B_volume() # Update B_vol
-
-        return True # If addition of segment was successful / didn't throw any errors
+        self.update_mag_vol()
 
     def B_volume(self) -> np.ndarray:
         ''' 
@@ -140,33 +153,27 @@ class Coil:
             dimension is size 3 representing x, y, and z components
         '''
 
-        print('executing B_volume')
-
         B_fields = []
-        
+
         for segment in self.segments:
-
-            fn = segment.line_fn.fn
-
-            x, y, z = smp.symbols(['x', 'y', 'z'])
-            r = smp.Matrix([x, y, z])
-            sep = r - fn
-
-            t = segment.line_fn.parameter
-            
-            # Define the integrand
-            integrand = smp.diff(fn, t).cross(sep) / sep.norm()**3
-            # Get the x, y, and z components of the integrand
-            dBxdt = smp.lambdify([t, x, y, z], integrand[0])
-            dBydt = smp.lambdify([t, x, y, z], integrand[1])
-            dBzdt = smp.lambdify([t, x, y, z], integrand[2])
-
-            # Add small tolerance to endpoint so it's included
-            x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[1] + 1e-10, self.scanner.vol_res[0])
-            y_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[3] + 1e-10, self.scanner.vol_res[1])
-            z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
-            xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
-
-            B_fields.append(sim_utils.B(segment.low_lim, segment.up_lim, dBxdt, dBydt, dBzdt, xv, yv, zv))
+            B_fields.append(segment.seg_B)
 
         return sum(B_fields)
+
+    def update_mag_vol(self):
+        '''
+        Updates self.B_vol to reflect the current B_volume
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+
+        '''
+
+        if len(self.segments) > 0 and self.scanner is not None:
+            self.B_vol = self.B_volume()
+            

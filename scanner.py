@@ -42,11 +42,13 @@ class Scanner:
             List of the coils present in the simulated scanner; default is an empty list
         '''
 
-        self.bbox = self.set_bbox(bbox)
-        self.vol_res = self.set_vol_res(vol_res)
+        self.bbox = None
+        self.set_bbox(bbox)
+        self.vol_res = None
+        self.set_vol_res(vol_res)
         self.coils = coils
     
-    def set_bbox(self, bbox : list) -> list:
+    def set_bbox(self, bbox : list):
         '''Validate and set self.bbox using passed list
 
         Parameters
@@ -58,21 +60,31 @@ class Scanner:
         -------
         ValueError
             If invalid list passed for bbox
-        bbox
-            If valid list passed for bbox
         '''
         
-        # Verify number of elements in list (should be 6)
         if len(bbox) != 6:
             raise ValueError("Incorect number of elements passed for bounding box; six elements should be passed")
 
-        # Verify element type (should all be floats)
         for elements in bbox:
             if not isinstance(elements, float):
                 raise ValueError("Incorrect element type passed for bounding box; all elements should be floats")
         
-        # Correctly-formatted list passed, so return bbox
-        return bbox
+        self.bbox = bbox
+
+    def get_bbox(self) -> list:
+        '''
+        Get the scanner's bounding box
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        self.bbox : list
+        '''
+
+        return self.bbox
     
     def set_vol_res(self, vol_res : list) -> list:
         '''
@@ -88,21 +100,31 @@ class Scanner:
         -------
         ValueError
             If invalid list passed for vol_Res
-        vol_res
-            If valid list passed for vol_res
         '''
-        
-        # Verify number of elements in list (should be 3)
+
         if len(vol_res) != 3:
                 raise ValueError("Incorrect number of elements passed for vol_res; three elements should be passed")
-        
-        # Verify element type (should all be floats)
+
         for elements in vol_res:
             if not isinstance(elements, float):
                     raise ValueError("INcorrect element type passed for vol_res; all elements should be floats")
             
-        # Correctly-formatted list passed, so return vol_res
-        return vol_res
+        self.vol_res = vol_res
+
+    def get_vol_res(self) -> list:
+        '''
+        Get the scanner's volume resolution
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        self.vol_res : list
+        '''
+
+        return self.vol_res
 
     def plot_coils(self) -> bool:
         '''
@@ -137,21 +159,13 @@ class Scanner:
         ----------
         coil : Coil
             Coil to add to the list of coils 
-
-        Returns
-        -------
-        True
-            If the passed coil was successfully added
         '''
 
         if type(coil) != Coil:
             raise TypeError('Ensure object passed as the argument is a coil')
         
         self.coils.append(coil)
-
-        coil.scanner = self # Define the added coil's scanner as the scanner having added it
-
-        return True # If coil successfully appended to coils list
+        coil.set_scanner(self) 
     
     def del_coils(self, coil : Coil):
         '''
@@ -161,22 +175,25 @@ class Scanner:
         ----------
         coil : Coil
             Pointer to the coil to be removed from the list of coils
-
-        Returns
-        -------
-        True
-            If the passed coil was successfully removed
-        False
-            If the passed coil was not removed (not a coil in the scanner)
-         '''
+        '''
         
         if type(coil) != Coil:
             raise TypeError('Ensure object passed as the argument is a coil')
         
-        if coil not in self.coils:
-            return False
-        
         self.coils.remove(coil)
         coil.scanner = None
+    
+    def get_coils(self, index : int) -> Coil:
+        '''
+        Get a coil by index number
 
-        return True # If coil successfully removed from coils list
+        Parameters
+        ----------
+        index : int
+            Index number of coil requested
+        '''
+
+        if index >= len(self.coils):
+            raise ValueError('Requested index does not exist')
+        
+        return self.coils[index]

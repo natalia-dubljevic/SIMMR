@@ -214,6 +214,8 @@ class CoilDesignUI(QWidget):
                 
 class StraightSegmentEditor(QWidget):
 
+    straight_seg_validator = QDoubleValidator()
+
     def __init__(self):
         super().__init__()
 
@@ -256,6 +258,9 @@ class StraightSegmentEditor(QWidget):
         self.text_prompts = [self.init_point_x_le, self.init_point_y_le, self.init_point_z_le,
                              self.end_point_x_le, self.end_point_y_le, self.end_point_z_le]
         
+        for le in self.text_prompts:
+            le.setValidator(self.straight_seg_validator)
+        
     def clear_text_prompts(self):
         for text in self.text_prompts:
             text.clear()
@@ -279,6 +284,8 @@ class StraightSegmentEditor(QWidget):
             return False
 
 class CurvedSegmentEditor(QWidget):
+
+    curved_seg_validator = QDoubleValidator()
 
     def __init__(self):
         super().__init__()
@@ -364,6 +371,8 @@ class CurvedSegmentEditor(QWidget):
                              self.r1_x_comp_le, self.r1_y_comp_le, self.r1_z_comp_le, self.r1_mag_le,
                              self.r2_x_comp_le, self.r2_y_comp_le, self.r2_z_comp_le, self.r2_mag_le,
                              self.par_min_le, self.par_max_le]
+        for le in self.text_prompts:
+            le.setValidator(self.curved_seg_validator)
         
     def clear_text_prompts(self):
         for text in self.text_prompts:

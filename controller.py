@@ -24,8 +24,13 @@ class Controller:
         self.segment_focus_index = None
         self.editing = False
         self.user_inputs = []
+        self.file = None
+        self.slice = self.view.tr_w.slice_combo_btn.currentText()
 
         self.view.save_clicked.triggered.connect(self.save_menu_clicked)
+
+        self.view.tr_w.slice_combo_btn.currentIndexChanged.connect(self.slice_button_changed)
+        self.view.tr_w.slice_loc_btn.editingFinished.connect(self.slice_loc_changed)
 
         # Button Connections
         self.view.mouse_clicked_outside.connect(self.handle_mouse_clicked_outside)
@@ -60,6 +65,15 @@ class Controller:
     def save_menu_clicked(self):
         self.save_workspace()
 
+    def slice_button_changed(self):
+        self.slice = self.view.tr_w.slice_combo_btn.currentText()
+        if self.coil_focus_index != None:
+            self.show_bottom_plots()
+
+    def slice_loc_changed(self):
+        text = self.view.tr_w.slice_loc_btn.text()
+        print(text)
+
     def handle_mouse_clicked_outside(self):
         if self.view.tl_w.stack.currentIndex() == 2:
             self.view.tl_w.coil_control.remove_highlight(self.coil_focus_index)
@@ -72,14 +86,14 @@ class Controller:
         self.view.tl_w.stack.setCurrentIndex(1)
 
     def handle_mod_scanner_btn_clicked(self):
-        self.load_workspace()
-        self.update_coil_control()
+        if self.load_workspace():
+            self.update_coil_control()
 
-        self.show_scanner_plot()
+            self.show_scanner_plot()
 
-        self.disable_coil_ed()
+            self.disable_coil_ed()
 
-        self.view.tl_w.stack.setCurrentIndex(2)
+            self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_init_scanner_clicked(self, bbox : list, vol_res : list):
         self.scanner = Scanner(bbox, vol_res)
@@ -114,8 +128,7 @@ class Controller:
         self.view.tl_w.coil_design.del_seg_btn.setDisabled(True)
         self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
         self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
-
-        self.scanner.add_coils(Coil()) # Adds a coil without any segments
+        self.scanner.add_coils(Coil(scanner = self.scanner)) # Adds a coil without any segments
         self.update_coil_focus(len(self.scanner.coils) - 1) # Sets the focus index to be the last
         self.update_coil_design()
         self.view.tl_w.stack.setCurrentIndex(3)
@@ -176,7 +189,7 @@ class Controller:
             if len(seg) == 6: # Straight Segment
                 line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
 
-                self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, 0, 1)) # Add segment
+                self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, 0, 1, self.scanner.get_coils(self.coil_focus_index))) # Add segment
 
             elif len(seg) == 13: # Curved Segment
                 c_x, c_y, c_z = seg[0], seg[1], seg[2]
@@ -191,7 +204,7 @@ class Controller:
                 r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
                 line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
             
-                self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+                self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, p_min * np.pi, p_max * np.pi, self.scanner.get_coils(self.coil_focus_index))) # Add segment
 
             else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
                 raise ValueError('Incompatible list size passed for segment creation')
@@ -203,7 +216,7 @@ class Controller:
             if len(seg) == 6: # Straight Segment
                 line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
 
-                self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index] = (Segment(line, 0, 1)) # Add segment
+                self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index] = (Segment(line, 0, 1, self.scanner.get_coils(self.coil_focus_index))) # Add segment
 
             elif len(seg) == 13: # Curved Segment
                 c_x, c_y, c_z = seg[0], seg[1], seg[2]
@@ -218,10 +231,12 @@ class Controller:
                 r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
                 line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
             
-                self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index] = (Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+                self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index] = (Segment(line, p_min * np.pi, p_max * np.pi, self.scanner.get_coils(self.coil_focus_index))) # Add segment
 
             else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
                 raise ValueError('Incompatible list size passed for segment creation')  
+            
+            self.scanner.coils[self.coil_focus_index].B_vol = self.scanner.coils[self.coil_focus_index].B_volume()
 
             self.editing = False         
 
@@ -230,16 +245,19 @@ class Controller:
 
         self.update_coil_design()
 
-    def show_fields_plot(self):
+    def show_fields_plot(self, slice_loc = None):
         
         if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
-            print('type not array')
+            print('can\'t show field plots; type not array')
             return
+        
+        if len(self.view.bl_w.figure.get_axes()) == 4:
+            self.view.bl_w.figure.get_axes()[3].remove()
 
         B_field = self.scanner.coils[self.coil_focus_index].B_vol
 
-        slice = 'z'
-        slice_loc = 0
+        # slice = slice if slice is not None else 'z'
+        slice_loc = slice_loc if slice_loc is not None else 0
 
         Bx = B_field[0, :, :, :]
         By = B_field[1, :, :, :]
@@ -250,22 +268,22 @@ class Controller:
         z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
         xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-        Bx_slice = sim_utils.get_slice(Bx, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        By_slice = sim_utils.get_slice(By, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        Bz_slice = sim_utils.get_slice(Bz, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        Bx_slice = sim_utils.get_slice(Bx, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        By_slice = sim_utils.get_slice(By, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        Bz_slice = sim_utils.get_slice(Bz, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
 
-        if slice == 'x':
+        if self.slice == 'x':
             ax1_label, ax2_label = 'y', 'z'
-            ax2 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'y':
+            ax2 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'y':
             ax1_label, ax2_label = 'x', 'z'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'z':
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'z':
             ax1_label, ax2_label = 'x', 'y'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
 
         vmin = min(np.min(Bx_slice), np.min(By_slice), np.min(Bz_slice))
         vmax = max(np.max(Bx_slice), np.max(By_slice), np.max(Bz_slice))
@@ -297,39 +315,46 @@ class Controller:
         
         self.view.bl_w.canvas.draw()
 
-    def show_mag_phase_plot(self):
+    def show_mag_phase_plot(self, slice_loc = None):
 
         if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
-            print('type not array')
+            print('can\'t show mag phase plots; type not array')
             return
+
+        for axes in self.view.br_w.axes:
+            axes.clear()
+
+        if len(self.view.br_w.figure.get_axes()) == 4:
+            self.view.br_w.figure.get_axes()[2].remove()
+            self.view.br_w.figure.get_axes()[2].remove()
 
         B_field = self.scanner.coils[self.coil_focus_index].B_vol
         B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]    
 
-        slice = 'z'
-        slice_loc = 0
+        # slice = slice if slice is not None else 'z'
+        slice_loc = slice_loc if slice_loc is not None else 0
 
         x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[1] + 1e-10, self.scanner.vol_res[0])
         y_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[3] + 1e-10, self.scanner.vol_res[1])
         z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
         xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-        B_slice = sim_utils.get_slice(B_complex, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        B_slice = sim_utils.get_slice(B_complex, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
         B_mag = np.abs(B_slice)
         B_phase = np.angle(B_slice)
 
-        if slice == 'x':
+        if self.slice == 'x':
             ax1_label, ax2_label = 'y', 'z'
-            ax2 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'y':
+            ax2 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'y':
             ax1_label, ax2_label = 'x', 'z'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'z':
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'z':
             ax1_label, ax2_label = 'x', 'y'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
 
         divider1 = make_axes_locatable(self.view.br_w.figure.axes[0])
         cax1 = divider1.append_axes('right', size='5%', pad=0.05)
@@ -359,6 +384,9 @@ class Controller:
         self.view.bl_w.canvas.draw()
         for ax in self.view.br_w.axes:
             ax.cla()
+        if len(self.view.br_w.figure.get_axes()) > 2:
+            self.view.br_w.figure.get_axes()[2].clear()
+            self.view.br_w.figure.get_axes()[3].clear()
         self.view.br_w.canvas.draw()
 
     def show_bottom_plots(self):
@@ -379,6 +407,10 @@ class Controller:
 
     def show_scanner_plot(self):
         self.view.tr_w.ax.cla()
+        self.view.tr_w.ax.set_xlabel("$x$")
+        self.view.tr_w.ax.set_ylabel("$y$")
+        self.view.tr_w.ax.set_zlabel("$z$")
+
 
         for coil in self.scanner.coils:
             if (self.coil_focus_index != None) and (self.scanner.coils[self.coil_focus_index] == coil):
@@ -405,6 +437,9 @@ class Controller:
             
     def show_coil_plot(self):
         self.view.tr_w.ax.cla()
+        self.view.tr_w.ax.set_xlabel("$x$")
+        self.view.tr_w.ax.set_ylabel("$y$")
+        self.view.tr_w.ax.set_zlabel("$z$")
         self.scanner.coils[self.coil_focus_index].plot_coil(self.view.tr_w.ax, False, self.coil_focus_index)
         self.view.tr_w.canvas.draw()  
 
@@ -463,7 +498,10 @@ class Controller:
 
     def save_workspace(self):
         try:
-            with open("data.json", "w") as json_file:
+            if self.file is None:
+                self.file = self.view.save_file_dialog()
+
+            with open(self.file, "w") as json_file:
                 json.dump(self, json_file, cls = CustomEncoder, indent=4)
         except Exception as e:
             print('Error saving workspace')
@@ -472,7 +510,9 @@ class Controller:
 
     def load_workspace(self):
         try:
-            with open("data.json", "r") as json_file:
+            self.file = self.view.open_file_dialog()    
+
+            with open(self.file, "r") as json_file:
                 data = json.load(json_file)
                 coils_to_add = []
                 for i in range(len(data['user_inputs'])):
@@ -506,7 +546,12 @@ class Controller:
 
                 self.scanner = Scanner(data['scanner_bbox'], data['scanner_vol_res'], coils_to_add)
                 self.user_inputs = data['user_inputs']
+            
+            return True
+        
         except Exception as e:
             print('Error loading workspace')
             print(e)
             self.view.error_poput('Error', 'Error loading workspace')
+
+            return False
