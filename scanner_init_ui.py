@@ -73,8 +73,8 @@ class SetScannerUI(QWidget):
 
     class BBoxCoordLimLO(QHBoxLayout):
 
-        BBOX_MIN_VALUE = -10.000 # Double (minimum double)
-        BBOX_MAX_VALUE = 10.000 # Double (maximum double)
+        BBOX_MIN_VALUE = -100.000 # Double (minimum double)
+        BBOX_MAX_VALUE = 100.000 # Double (maximum double)
         BBOX_MIN_MAX_DEC = 3 # Integer (number of decimal places)
 
         bbox_validator = QDoubleValidator(BBOX_MIN_VALUE, BBOX_MAX_VALUE, BBOX_MIN_MAX_DEC) 

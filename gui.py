@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel,
                              QGridLayout, QStackedWidget, QMenu, QAction,
-                             QMessageBox, QFileDialog)
+                             QMessageBox, QFileDialog, QComboBox, QHBoxLayout,
+                             QSizePolicy, QLineEdit, QPushButton)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator
 
@@ -66,19 +67,18 @@ class MainWindow(QMainWindow):
             selected_files = file_dialog.selectedFiles()
             # Process the selected file(s)
             for file_path in selected_files:
-                print('Selected file:', file_path)
                 return file_path
             
     def save_file_dialog(self):
         # Open folder dialog for saving a file
         file_dialog = QFileDialog()
         file_dialog.setWindowTitle('Save File')
-        file_dialog.setFileMode(QFileDialog.Directory)
+        file_dialog.setAcceptMode(QFileDialog.AcceptSave)
+        file_dialog.setFileMode(QFileDialog.AnyFile)
 
         # Check if the dialog was accepted (a folder was selected)
         if file_dialog.exec_() == QFileDialog.Accepted:
-            selected_folder = file_dialog.selectedFiles()[0]
-            return selected_folder + '/new_workspace.json'
+            return file_dialog.selectedFiles()[0]
 
 class Control_Panel_Widget(QWidget):
 
@@ -126,8 +126,36 @@ class View_Widget(QWidget):
         self.ax.set_zlabel("$z$")
 
         self.canvas = FigureCanvas(self.figure)
+
+        btn_layout = QHBoxLayout()
+
+        tmp_btn_lo = QVBoxLayout()
+        tmp_lbl = QLabel('Slice Axis')
+        tmp_lbl.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
+        tmp_btn_lo.addWidget(tmp_lbl)
+        self.slice_combo_btn = QComboBox()
+        self.slice_combo_btn.addItem('x')
+        self.slice_combo_btn.addItem('y')
+        self.slice_combo_btn.addItem('z')
+        self.slice_combo_btn.setCurrentIndex(2)
+        tmp_btn_lo.addWidget(self.slice_combo_btn)
+        btn_layout.addLayout(tmp_btn_lo)
+
+        tmp_btn_lo = QVBoxLayout()
+        tmp_lbl = QLabel('Slice Location')
+        tmp_lbl.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
+        tmp_btn_lo.addWidget(tmp_lbl)
+        self.slice_loc_combo_btn = QLineEdit()
+        tmp_btn_lo.addWidget(self.slice_loc_combo_btn)
+        btn_layout.addLayout(tmp_btn_lo)
+
+        self.export_btn = QPushButton('Export')
+        btn_layout.addWidget(self.export_btn)
+
         layout = QVBoxLayout()
         layout.addWidget(self.canvas)
+        layout.addLayout(btn_layout)
+
         self.setLayout(layout)
 
 class Fields_View_Widget(QWidget):

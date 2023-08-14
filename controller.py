@@ -25,8 +25,11 @@ class Controller:
         self.editing = False
         self.user_inputs = []
         self.file = None
+        self.slice = self.view.tr_w.slice_combo_btn.currentText()
 
         self.view.save_clicked.triggered.connect(self.save_menu_clicked)
+
+        self.view.tr_w.slice_combo_btn.currentIndexChanged.connect(self.slice_button_changed)
 
         # Button Connections
         self.view.mouse_clicked_outside.connect(self.handle_mouse_clicked_outside)
@@ -60,6 +63,9 @@ class Controller:
 
     def save_menu_clicked(self):
         self.save_workspace()
+
+    def slice_button_changed(self):
+        self.slice = self.view.tr_w.slice_combo_btn.currentText()
 
     def handle_mouse_clicked_outside(self):
         if self.view.tl_w.stack.currentIndex() == 2:
@@ -223,6 +229,8 @@ class Controller:
 
             else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
                 raise ValueError('Incompatible list size passed for segment creation')  
+            
+            self.scanner.coils[self.coil_focus_index].B_vol = self.scanner.coils[self.coil_focus_index].B_volume()
 
             self.editing = False         
 
@@ -231,16 +239,16 @@ class Controller:
 
         self.update_coil_design()
 
-    def show_fields_plot(self):
+    def show_fields_plot(self, slice_loc = None):
         
         if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
-            print('type not array')
+            print('can\'t show field plots; type not array')
             return
 
         B_field = self.scanner.coils[self.coil_focus_index].B_vol
 
-        slice = 'z'
-        slice_loc = 0
+        # slice = slice if slice is not None else 'z'
+        slice_loc = slice_loc if slice_loc is not None else 0
 
         Bx = B_field[0, :, :, :]
         By = B_field[1, :, :, :]
@@ -251,22 +259,22 @@ class Controller:
         z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
         xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-        Bx_slice = sim_utils.get_slice(Bx, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        By_slice = sim_utils.get_slice(By, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        Bz_slice = sim_utils.get_slice(Bz, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        Bx_slice = sim_utils.get_slice(Bx, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        By_slice = sim_utils.get_slice(By, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        Bz_slice = sim_utils.get_slice(Bz, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
 
-        if slice == 'x':
+        if self.slice == 'x':
             ax1_label, ax2_label = 'y', 'z'
-            ax2 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'y':
-            ax1_label, ax2_label = 'x', 'z'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'z':
-            ax1_label, ax2_label = 'x', 'y'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax2 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'y':
+            ax1_label, ax2_label = 'x', 'zself'
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'z':
+            ax1_label, ax2_label = 'x', 'yself'
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
 
         vmin = min(np.min(Bx_slice), np.min(By_slice), np.min(Bz_slice))
         vmax = max(np.max(Bx_slice), np.max(By_slice), np.max(Bz_slice))
@@ -298,39 +306,39 @@ class Controller:
         
         self.view.bl_w.canvas.draw()
 
-    def show_mag_phase_plot(self):
+    def show_mag_phase_plot(self, slice_loc = None):
 
         if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
-            print('type not array')
+            print('can\'t show mag phase plots; type not array')
             return
 
         B_field = self.scanner.coils[self.coil_focus_index].B_vol
         B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]    
 
-        slice = 'z'
-        slice_loc = 0
+        # slice = slice if slice is not None else 'z'
+        slice_loc = slice_loc if slice_loc is not None else 0
 
         x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[1] + 1e-10, self.scanner.vol_res[0])
         y_dim = np.arange(self.scanner.bbox[2], self.scanner.bbox[3] + 1e-10, self.scanner.vol_res[1])
         z_dim = np.arange(self.scanner.bbox[4], self.scanner.bbox[5] + 1e-10, self.scanner.vol_res[2])
         xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-        B_slice = sim_utils.get_slice(B_complex, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        B_slice = sim_utils.get_slice(B_complex, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
         B_mag = np.abs(B_slice)
         B_phase = np.angle(B_slice)
 
-        if slice == 'x':
+        if self.slice == 'x':
             ax1_label, ax2_label = 'y', 'z'
-            ax2 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'y':
+            ax2 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'y':
             ax1_label, ax2_label = 'x', 'z'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(zv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-        elif slice == 'z':
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(zv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+        elif self.slice == 'z':
             ax1_label, ax2_label = 'x', 'y'
-            ax2 = sim_utils.get_slice(xv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
-            ax1 = sim_utils.get_slice(yv, slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax2 = sim_utils.get_slice(xv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
+            ax1 = sim_utils.get_slice(yv, self.slice, slice_loc, self.scanner.vol_res, self.scanner.bbox)
 
         divider1 = make_axes_locatable(self.view.br_w.figure.axes[0])
         cax1 = divider1.append_axes('right', size='5%', pad=0.05)

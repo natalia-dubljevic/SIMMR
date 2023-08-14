@@ -140,8 +140,6 @@ class Coil:
             dimension is size 3 representing x, y, and z components
         '''
 
-        print('executing B_volume')
-
         B_fields = []
         
         for segment in self.segments:
