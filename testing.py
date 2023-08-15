@@ -234,3 +234,4 @@ B_field = c1.B_volume() # Choose which coil to generate B_field, etc. for
 # time_end = time.time()
 # print('Optimized: ' + str(time_end - time_start) + ' seconds')
 
+

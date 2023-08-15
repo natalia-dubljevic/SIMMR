@@ -59,6 +59,7 @@ class Controller:
         self.view.tl_w.coil_design.confirm_seg_clicked.connect(self.handle_confirm_seg_clicked)
 
         self.view.tr_w.slice_combo_btn.currentTextChanged.connect(self.slice_button_changed)
+        self.view.tr_w.export_btn_clicked.connect(self.handle_export_btn_clicked)
         #===================
 
     def slice_button_changed(self):
@@ -66,6 +67,26 @@ class Controller:
         self.slice = self.view.tr_w.slice_combo_btn.currentText()
         if self.coil_focus_index != None:
             self.show_bottom_plots()
+
+    def handle_export_btn_clicked(self):
+        try:
+            export_file = self.view.save_file_dialog()
+            size = []
+            for coil in self.scanner.coils:
+                size.append(len(coil.segments))
+            tmp = []
+            for i in range(0, len(self.scanner.coils)):
+                tmp_internal = []
+                for j in range(0, len(self.scanner.get_coils(i).segments)):
+                    tmp_internal.append(self.scanner.get_coils(i).segments[j].seg_B)
+                tmp.append(tmp_internal)
+            export_array = np.array(tmp)
+            print(export_array)
+            np.save(export_file, export_array) 
+        except Exception as e:
+            print('Error exporting sensitivity maps')
+            print(e)
+            self.view.error_poput('Error', 'Error exporting sensitivity maps')
 
     def save_menu_clicked(self):
         self.save_workspace()
@@ -442,7 +463,7 @@ class Controller:
     def update_coil_design(self):
         self.update_segment_scroll()
         self.show_coil_plot()
-        
+
         if not self.view.tl_w.coil_design.add_seg_btn.isChecked():
             self.view.tl_w.coil_design.clear_all_text() 
         

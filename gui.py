@@ -121,6 +121,8 @@ class Control_Panel_Widget(QWidget):
 
 class View_Widget(QWidget):
 
+    export_btn_clicked = pyqtSignal()
+
     def __init__(self, parent : QWidget):
         super(View_Widget, self).__init__(parent)
         self.figure = plt.figure()
@@ -155,6 +157,7 @@ class View_Widget(QWidget):
         btn_layout.addLayout(tmp_btn_lo)
 
         self.export_btn = QPushButton('Export')
+        self.export_btn.clicked.connect(self.export_btn_clicked)
         btn_layout.addWidget(self.export_btn)
 
         layout = QVBoxLayout()
