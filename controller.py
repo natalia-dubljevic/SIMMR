@@ -442,7 +442,9 @@ class Controller:
     def update_coil_design(self):
         self.update_segment_scroll()
         self.show_coil_plot()
-        self.view.tl_w.coil_design.clear_all_text()
+        
+        if not self.view.tl_w.coil_design.add_seg_btn.isChecked():
+            self.view.tl_w.coil_design.clear_all_text() 
         
         if len(self.scanner.coils) >= 1 and len(self.scanner.coils[-1].segments) >= 1:
             self.show_bottom_plots()
