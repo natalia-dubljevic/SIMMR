@@ -530,9 +530,12 @@ class Controller:
                                           linewidths = 1, edgecolors = 'r', facecolors = 'r', alpha = 0.2)
                 self.view.tr_w.ax.add_collection3d(slice)
 
-        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] * 2, self.scanner.get_bbox()[1] * 2)
-        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] * 2, self.scanner.get_bbox()[3] * 2)
-        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] * 2, self.scanner.get_bbox()[5] * 2)
+        x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
+        y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
+        z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
+        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - x_dif, self.scanner.get_bbox()[1] + x_dif)
+        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - y_dif, self.scanner.get_bbox()[3] + y_dif)
+        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - z_dif, self.scanner.get_bbox()[5] + z_dif)
 
         # END CONSTRUCTION ZONE
         #-------------------------------------------------
@@ -621,9 +624,12 @@ class Controller:
                                           linewidths = 1, edgecolors = 'r', facecolors = 'r', alpha = 0.2)
                 self.view.tr_w.ax.add_collection3d(slice)
 
-        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] * 2, self.scanner.get_bbox()[1] * 2)
-        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] * 2, self.scanner.get_bbox()[3] * 2)
-        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] * 2, self.scanner.get_bbox()[5] * 2)
+        x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
+        y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
+        z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
+        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - x_dif, self.scanner.get_bbox()[1] + x_dif)
+        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - y_dif, self.scanner.get_bbox()[3] + y_dif)
+        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - z_dif, self.scanner.get_bbox()[5] + z_dif)
         
         self.scanner.coils[self.coil_focus_index].plot_coil(self.view.tr_w.ax, False, self.coil_focus_index)
         self.view.tr_w.canvas.draw()  
