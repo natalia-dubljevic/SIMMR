@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QMainWindow, QVBoxLayout, QWidget, QLabel,
                              QMessageBox, QFileDialog, QComboBox, QHBoxLayout,
                              QSizePolicy, QLineEdit, QPushButton)
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtGui import QDoubleValidator, QIntValidator
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -122,6 +122,9 @@ class Control_Panel_Widget(QWidget):
 class View_Widget(QWidget):
 
     export_btn_clicked = pyqtSignal()
+    slice_loc_modified_signal = pyqtSignal(int)
+
+    slice_loc_validator = QIntValidator()
 
     def __init__(self, parent : QWidget):
         super(View_Widget, self).__init__(parent)
@@ -149,10 +152,12 @@ class View_Widget(QWidget):
         btn_layout.addLayout(tmp_btn_lo)
 
         tmp_btn_lo = QVBoxLayout()
-        tmp_lbl = QLabel('Slice Location')
-        tmp_lbl.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
-        tmp_btn_lo.addWidget(tmp_lbl)
-        self.slice_loc_btn = QLineEdit()
+        self.slice_loc_lbl = QLabel('Slice Number')
+        self.slice_loc_lbl.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
+        tmp_btn_lo.addWidget(self.slice_loc_lbl)
+        self.slice_loc_btn = QLineEdit('1')
+        self.slice_loc_btn.setValidator(self.slice_loc_validator)
+        self.slice_loc_btn.editingFinished.connect(self.slice_loc_modified)
         tmp_btn_lo.addWidget(self.slice_loc_btn)
         btn_layout.addLayout(tmp_btn_lo)
 
@@ -165,6 +170,12 @@ class View_Widget(QWidget):
         layout.addLayout(btn_layout)
 
         self.setLayout(layout)
+
+    def set_slice_loc_label(self, low_lim, up_lim):
+        self.layout().itemAt(1).layout().itemAt(1).layout().itemAt(0).widget().setText('Slice Number (' + str(low_lim) + ' - ' + str(up_lim) + ')')
+
+    def slice_loc_modified(self):
+        self.slice_loc_modified_signal.emit(int(self.slice_loc_btn.text()))
 
 class Fields_View_Widget(QWidget):
 

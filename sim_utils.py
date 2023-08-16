@@ -121,7 +121,7 @@ def B(lower_lim : float, upper_lim : float, dBxdt : callable, dBydt : callable,
 #     return sum(B_fields)
 
 
-def get_slice(data_volume: np.ndarray, slice: str, slice_loc: float, 
+def get_slice(data_volume: np.ndarray, slice: str, slice_loc: int, 
               vol_res=(1, 1, 1), bbox=(-1, -1, -1, 2, 2, 2)) -> np.ndarray:
     ''' Get a slice at a given physical real-world coordinate
 
@@ -143,20 +143,32 @@ def get_slice(data_volume: np.ndarray, slice: str, slice_loc: float,
     np.ndarray
         2D slice taken from data_volume at the desired location
     '''
+    # if slice.lower() == 'x':
+    #     x = np.arange(bbox[0], bbox[1] + 1e-10, vol_res[0])
+    #     min_ind = np.argmin(np.abs(x - slice_loc))
+    #     return data_volume[min_ind, :, :]
+    
+    # elif slice.lower() == 'y':
+    #     y = np.arange(bbox[2], bbox[3] + 1e-10, vol_res[1])
+    #     min_ind = np.argmin(np.abs(y - slice_loc))
+    #     return data_volume[:, min_ind, :]
+    
+    # elif slice.lower() == 'z':
+    #     z = np.arange(bbox[4], bbox[5] + 1e-10, vol_res[2])
+    #     min_ind = np.argmin(np.abs(z - slice_loc))
+    #     return data_volume[:, :, min_ind]
+
     if slice.lower() == 'x':
         x = np.arange(bbox[0], bbox[1] + 1e-10, vol_res[0])
-        min_ind = np.argmin(np.abs(x - slice_loc))
-        return data_volume[min_ind, :, :]
+        return data_volume[slice_loc - 1, :, :]
     
     elif slice.lower() == 'y':
         y = np.arange(bbox[2], bbox[3] + 1e-10, vol_res[1])
-        min_ind = np.argmin(np.abs(y - slice_loc))
-        return data_volume[:, min_ind, :]
+        return data_volume[:, slice_loc - 1, :]
     
     elif slice.lower() == 'z':
         z = np.arange(bbox[4], bbox[5] + 1e-10, vol_res[2])
-        min_ind = np.argmin(np.abs(z - slice_loc))
-        return data_volume[:, :, min_ind]
+        return data_volume[:, :, slice_loc - 1]
     
 def plot_mag_phase(B_complex : np.ndarray, slice: str, slice_loc: float, 
                    vol_res=(1, 1, 1), bbox=(-1, -1, -1, 2, 2, 2), 
