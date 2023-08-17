@@ -30,7 +30,7 @@ class Segment():
         Generate 3D coordinates of segment
     '''
 
-    def __init__(self, fn : Curved | Straight, low_lim : float, up_lim : float, coil : 'Coil' = None):
+    def __init__(self, fn : Curved | Straight, low_lim : float, up_lim : float, coil : 'Coil' = None, seg_B : np.ndarray = None):
         '''
         Parameters
         ----------
@@ -45,12 +45,13 @@ class Segment():
         '''
         self.coil = None
         self.line_fn = None
-        self.seg_B = None
+        self.seg_B = seg_B
         self.low_lim = low_lim
         self.up_lim = up_lim
         self.set_coil(coil)
         self.set_line_fn(fn)
-        self.calc_seg_B()
+        if type(self.seg_B) != np.ndarray:
+            self.calc_seg_B()
 
     def validate_line_fn(self, fn : Curved | Straight) -> bool:
         '''

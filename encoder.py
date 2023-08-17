@@ -20,13 +20,7 @@ class CustomEncoder(json.JSONEncoder):
         to_return = []
         for coil in controller.scanner.coils:
             to_append = []
-            # to_append.append(self.encode_segments(coil))
-            to_append.append(coil.B_vol.tolist())
+            for seg in coil.segments:
+                to_append.append(seg.seg_B.tolist())
             to_return.append(to_append)
         return to_return
-
-    # def encode_segments(self, coil):
-    #     to_return = []
-    #     for segment in coil.segments:
-    #         to_return.append([segment.low_lim, segment.up_lim])
-    #     return to_return

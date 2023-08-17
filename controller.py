@@ -188,6 +188,7 @@ class Controller:
 
         self.update_coil_focus(self.coil_focus_index) # Sets the focus index
         self.update_coil_design()
+        self.update_num_slices()
         self.view.tl_w.stack.setCurrentIndex(3)
 
     def handle_add_coil_clicked(self):
@@ -196,6 +197,7 @@ class Controller:
         self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
         self.scanner.add_coils(Coil(scanner = self.scanner)) # Adds a coil without any segments
         self.update_coil_focus(len(self.scanner.coils) - 1) # Sets the focus index to be the last
+        self.update_num_slices()
         self.update_coil_design()
         self.view.tl_w.stack.setCurrentIndex(3)
 
@@ -707,15 +709,16 @@ class Controller:
 
             with open(self.file, "r") as json_file:
                 data = json.load(json_file)
-                coils_to_add = []
+                self.scanner = Scanner(data['scanner_bbox'], data['scanner_vol_res'])
                 for i in range(len(data['user_inputs'])):
                     segs = []
-
-                    for seg in data['user_inputs'][i]:
-                        if len(seg) == 6: # Straight Segment
+                    # for seg in data['user_inputs'][i]:
+                    for j in range(0, len(data['user_inputs'][i])): # inserted instead of 713
+                        seg = data['user_inputs'][i][j]
+                        if len(data['user_inputs'][i][j]) == 6: # Straight Segment
                             line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
 
-                            segs.append(Segment(line, 0, 1)) # Add segment
+                            segs.append(Segment(line, 0, 1, seg_B = np.array(data['coils'][i][j]))) # Add segment
 
                         elif len(seg) == 13: # Curved Segment
                             c_x, c_y, c_z = seg[0], seg[1], seg[2]
@@ -730,14 +733,16 @@ class Controller:
                             r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
                             line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
                         
-                            segs.append(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
+                            segs.append(Segment(line, p_min * np.pi, p_max * np.pi, seg_B = np.array(data['coils'][i][j]))) # Add segment
 
                         else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
                             raise ValueError('Incompatible list size passed for segment creation')
-                        
-                    coils_to_add.append(Coil(segs, np.array(data['coils'][0][i])))
+                    
+                    coil_to_add = Coil(scanner = self.scanner)
+                    for seg in segs:
+                        coil_to_add.add_segment(seg)
+                    self.scanner.add_coils(coil_to_add)
 
-                self.scanner = Scanner(data['scanner_bbox'], data['scanner_vol_res'], coils_to_add)
                 self.user_inputs = data['user_inputs']
             
             return True
