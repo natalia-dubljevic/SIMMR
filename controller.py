@@ -118,16 +118,22 @@ class Controller:
     def handle_export_btn_clicked(self):
         try:
             export_file = self.view.save_file_dialog()
-            size = []
-            for coil in self.scanner.coils:
-                size.append(len(coil.segments))
+            # size = []
+            # for coil in self.scanner.coils:
+            #     size.append(len(coil.segments))
             tmp = []
             for i in range(0, len(self.scanner.coils)):
-                tmp_internal = []
-                for j in range(0, len(self.scanner.get_coils(i).segments)):
-                    tmp_internal.append(self.scanner.get_coils(i).segments[j].seg_B)
-                tmp.append(tmp_internal)
+                # tmp_internal = []
+                # for j in range(0, len(self.scanner.get_coils(i).segments)):
+                #     tmp_internal.append(self.scanner.get_coils(i).segments[j].seg_B)
+                # tmp.append(tmp_internal)
+                B_field = self.scanner.coils[i].B_vol
+                B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]  
+                print(B_complex)
+                tmp.append(B_complex)
+            print(tmp)
             export_array = np.array(tmp)
+            print(export_array)
             np.save(export_file, export_array) 
         except Exception as e:
             print('Error exporting sensitivity maps')
@@ -353,7 +359,12 @@ class Controller:
 
         vmin = min(np.min(Bx_slice), np.min(By_slice), np.min(Bz_slice))
         vmax = max(np.max(Bx_slice), np.max(By_slice), np.max(Bz_slice))
-        norm = mpl.colors.TwoSlopeNorm(vmin=vmin, vcenter=0., vmax=vmax)
+        print(vmin)
+        print(vmax)
+        if vmin == 0:
+            norm = mpl.colors.Normalize(vmin = vmin, vmax = vmax)
+        else:
+            norm = mpl.colors.TwoSlopeNorm(vmin=vmin, vcenter=0., vmax=vmax)
 
 
         self.view.bl_w.axes[0].contourf(ax2, ax1, Bx_slice, levels=20, norm=norm, cmap='RdBu_r')
@@ -535,9 +546,13 @@ class Controller:
         x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
         y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
         z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
-        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - x_dif, self.scanner.get_bbox()[1] + x_dif)
-        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - y_dif, self.scanner.get_bbox()[3] + y_dif)
-        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - z_dif, self.scanner.get_bbox()[5] + z_dif)
+        max_dif = max(x_dif, y_dif, z_dif)
+        # self.view.tr_w.ax.set_xlim(max_dif)
+        # self.view.tr_w.ax.set_ylim(max_dif)
+        # self.view.tr_w.ax.set_zlim(max_dif)
+        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - 0.25 * x_dif, self.scanner.get_bbox()[1] + 0.25 * x_dif)
+        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - 0.25 * y_dif, self.scanner.get_bbox()[3] + 0.25 * y_dif)
+        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - 0.25 * z_dif, self.scanner.get_bbox()[5] + 0.25 * z_dif)
 
         # END CONSTRUCTION ZONE
         #-------------------------------------------------
@@ -629,9 +644,13 @@ class Controller:
         x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
         y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
         z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
-        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - x_dif, self.scanner.get_bbox()[1] + x_dif)
-        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - y_dif, self.scanner.get_bbox()[3] + y_dif)
-        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - z_dif, self.scanner.get_bbox()[5] + z_dif)
+        # self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - x_dif, self.scanner.get_bbox()[1] + x_dif)
+        # self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - y_dif, self.scanner.get_bbox()[3] + y_dif)
+        # self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - z_dif, self.scanner.get_bbox()[5] + z_dif)
+        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - 0.25 * x_dif, self.scanner.get_bbox()[1] + 0.25 * x_dif)
+        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - 0.25 * y_dif, self.scanner.get_bbox()[3] + 0.25 * y_dif)
+        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - 0.25 * z_dif, self.scanner.get_bbox()[5] + 0.25 * z_dif)
+
         
         self.scanner.coils[self.coil_focus_index].plot_coil(self.view.tr_w.ax, False, self.coil_focus_index)
         self.view.tr_w.canvas.draw()  

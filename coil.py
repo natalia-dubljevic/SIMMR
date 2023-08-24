@@ -97,11 +97,11 @@ class Coil:
 
         for segment in self.segments:
 
-            seg_color = 'magenta'
+            seg_color = 'black'
 
             x_coords, y_coords, z_coords = segment.get_coords()
 
-            ax.plot(x_coords, y_coords, z_coords, color = seg_color)
+            ax.plot(x_coords, y_coords, z_coords, color = seg_color, lw = 3)
 
             # Add an arrow to the midpoint to give the direction
             n = len(x_coords) // 2

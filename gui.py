@@ -134,6 +134,7 @@ class View_Widget(QWidget):
         self.ax.set_xlabel("$x$")
         self.ax.set_ylabel("$y$")
         self.ax.set_zlabel("$z$")
+        self.ax.view_init(vertical_axis = 'y')
 
         self.canvas = FigureCanvas(self.figure)
 
