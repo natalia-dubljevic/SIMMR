@@ -50,8 +50,8 @@ class Segment():
         self.up_lim = up_lim
         self.set_coil(coil)
         self.set_line_fn(fn)
-        if type(self.seg_B) != np.ndarray:
-            self.calc_seg_B()
+        # if type(self.seg_B) != np.ndarray:
+        #     self.calc_seg_B(self.get_coil().scanner.get_bbox())
 
     def validate_line_fn(self, fn : Curved | Straight) -> bool:
         '''
@@ -195,7 +195,7 @@ class Segment():
 
         return coords[0], coords[1], coords[2]
     
-    def calc_seg_B(self):
+    def calc_seg_B(self, volume_coords : list) -> np.ndarray:
         '''
         Calculates the segments magnetic effect and sets it as self.seg_B
         '''
@@ -215,9 +215,9 @@ class Segment():
         dBzdt = smp.lambdify([t, x, y, z], integrand[2])
 
         # Add small tolerance to endpoint so it's included
-        x_dim = np.arange(self.coil.scanner.bbox[0], self.coil.scanner.bbox[1] + 1e-10, self.coil.scanner.vol_res[0])
-        y_dim = np.arange(self.coil.scanner.bbox[2], self.coil.scanner.bbox[3] + 1e-10, self.coil.scanner.vol_res[1])
-        z_dim = np.arange(self.coil.scanner.bbox[4], self.coil.scanner.bbox[5] + 1e-10, self.coil.scanner.vol_res[2])
+        x_dim = np.arange(volume_coords[0], volume_coords[1] + 1e-10, self.coil.scanner.vol_res[0])
+        y_dim = np.arange(volume_coords[2], volume_coords[3] + 1e-10, self.coil.scanner.vol_res[1])
+        z_dim = np.arange(volume_coords[4], volume_coords[5] + 1e-10, self.coil.scanner.vol_res[2])
         xv, yv, zv = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-        self.seg_B = b_calculation.B(self.low_lim, self.up_lim, dBxdt, dBydt, dBzdt, xv, yv, zv)
+        return b_calculation.B(self.low_lim, self.up_lim, dBxdt, dBydt, dBzdt, xv, yv, zv)

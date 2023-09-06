@@ -30,6 +30,7 @@ class Controller:
         self.slice = self.view.tr_w.slice_combo_btn.currentText()
         self.num_slices = None
         self.slice_loc = 1
+        self.slice_B_vol = None
 
         self.view.save_clicked.triggered.connect(self.save_menu_clicked)
 
@@ -68,7 +69,10 @@ class Controller:
         #===================
 
     def slice_button_changed(self):
-        print('executing slice_button_changed')
+        '''
+        Handles the modification of the slice selected
+        '''
+
         self.slice = self.view.tr_w.slice_combo_btn.currentText()
         self.update_num_slices()
         if self.slice_loc > self.num_slices:
@@ -79,10 +83,21 @@ class Controller:
         elif self.view.tl_w.stack.currentIndex() == 3:
             self.show_coil_plot()
 
-        if self.coil_focus_index != None:
+        if len(self.scanner.coils) != 0:
+            self.update_B_vol_slice()
+
+        if self.coil_focus_index != None and len(self.scanner.get_coils[self.coil_focus_index].segments) != 0:
             self.show_bottom_plots()
 
     def update_num_slices(self):
+        '''
+        Updates self.num_slices (a 'Controller' property) to reflect the current number of slices
+
+        1. Checks that self.scanner is not None, and print to console if it is (without proceeding further)
+        2. Match self.slice to cases 'x', 'y', or 'z'
+        3. Update the number of slices in accordance with the scanner bounding box and self.slice
+        '''
+
         if self.scanner != None:
             match self.slice:
                 case 'x':
@@ -91,20 +106,74 @@ class Controller:
                     self.num_slices = np.arange(self.scanner.get_bbox()[2], self.scanner.get_bbox()[3], self.scanner.get_vol_res()[1]).size
                 case 'z':
                     self.num_slices = np.arange(self.scanner.get_bbox()[4], self.scanner.get_bbox()[5], self.scanner.get_vol_res()[2]).size
-        self.update_slice_lbl()
+            self.update_slice_lbl()
+        else:
+            print('Controller does not have a instantiated self.scanner property')
 
     def update_slice_lbl(self):
+        '''
+        Updates the slice range available for display
+        '''
+
         self.view.tr_w.set_slice_loc_label(1, self.num_slices)
 
     def handle_slice_loc_changed(self, slice_req):
-        print('executing handle_slice_loc_changed')
+        '''
+        Handles the modification of slice location by the user
+        '''
         if slice_req >= 1 and slice_req <= self.num_slices:
             self.update_selected_slice(slice_req)
         else:
             self.update_selected_slice(self.slice_loc)
             self.view.error_poput('Slice Number Error', 'Invalid slice entered (' + str(slice_req) + '). Enter slice within range listed')
 
+    def update_B_vol_slice(self):
+        '''
+        Update self.B_vol_slice to reflect current slice
+
+        1. Logic: Matches self.slice to 'x', 'y', or 'z' and creates LV slice_volume according to slice, scanner bounding box,
+        and scanner volume resolution
+        2. Logic: Creates LV B_fields_slice; iteratively calls Segment.calc_seg_B using the defined slice volume and sums all
+        arrays returned during this iterative calling to update self.slice_B_vol to reflect current selection and slice
+        '''
+
+        match self.slice:
+                case 'x':
+                    slice_range = np.arange(self.scanner.get_bbox()[0], self.scanner.get_bbox()[1], self.scanner.get_vol_res()[0])
+                    x = slice_range[self.slice_loc - 1]
+                    y_min = self.scanner.get_bbox()[2]
+                    y_max = self.scanner.get_bbox()[3]
+                    z_min = self.scanner.get_bbox()[4]
+                    z_max = self.scanner.get_bbox()[5]
+                    slice_volume = [x, x, y_min, y_max, z_min, z_max]
+                case 'y':
+                    slice_range = np.arange(self.scanner.get_bbox()[2], self.scanner.get_bbox()[3], self.scanner.get_vol_res()[1])
+                    y = slice_range[self.slice_loc - 1]
+                    x_min = self.scanner.get_bbox()[0]
+                    x_max = self.scanner.get_bbox()[1]
+                    z_min = self.scanner.get_bbox()[4]
+                    z_max = self.scanner.get_bbox()[5]
+                    slice_volume = [x_min, x_max, y, y, z_min, z_max]
+                case 'z':
+                    slice_range = np.arange(self.scanner.get_bbox()[4], self.scanner.get_bbox()[5], self.scanner.get_vol_res()[2])
+                    z = slice_range[self.slice_loc - 1]
+                    x_min = self.scanner.get_bbox()[0]
+                    x_max = self.scanner.get_bbox()[1]
+                    y_min = self.scanner.get_bbox()[2]
+                    y_max = self.scanner.get_bbox()[3]
+                    slice_volume = [x_min, x_max, y_min, y_max, z, z]
+
+        B_fields_slice = []
+
+        for segment in self.scanner.get_coils(self.coil_focus_index).segments:
+            B_fields_slice.append(segment.calc_seg_B(slice_volume))
+
+        self.slice_B_vol = sum(B_fields_slice)
+
     def update_selected_slice(self, slice_req):
+        '''
+        General update for the selected slice
+        '''
         self.slice_loc = slice_req
         self.view.tr_w.slice_loc_btn.setText(str(self.slice_loc))
         if self.view.tl_w.stack.currentIndex() == 2:
@@ -112,21 +181,20 @@ class Controller:
         elif self.view.tl_w.stack.currentIndex() == 3:
             self.show_coil_plot()
 
+        if len(self.scanner.coils) != 0:
+            self.update_B_vol_slice()
+
         if self.coil_focus_index != None:
             self.show_bottom_plots()
 
     def handle_export_btn_clicked(self):
+        '''
+        Handles the exporting of the final sensitivity profiles
+        '''
         try:
             export_file = self.view.save_file_dialog()
-            # size = []
-            # for coil in self.scanner.coils:
-            #     size.append(len(coil.segments))
             tmp = []
             for i in range(0, len(self.scanner.coils)):
-                # tmp_internal = []
-                # for j in range(0, len(self.scanner.get_coils(i).segments)):
-                #     tmp_internal.append(self.scanner.get_coils(i).segments[j].seg_B)
-                # tmp.append(tmp_internal)
                 B_field = self.scanner.coils[i].B_vol
                 B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]  
                 print(B_complex)
@@ -141,10 +209,17 @@ class Controller:
             self.view.error_poput('Error', 'Error exporting sensitivity maps')
 
     def save_menu_clicked(self):
+        '''
+        Handles the user clicking 'Save'
+        '''
         self.save_workspace()
 
     def handle_mouse_clicked_outside(self):
-        print('executing handle_mouse_clicked_outside')
+        '''
+        Handles the user clicking outside of the focus area (the scroll pane)
+
+        Used to reset coil/segment focus
+        '''
         if self.view.tl_w.stack.currentIndex() == 2:
             self.view.tl_w.coil_control.remove_highlight(self.coil_focus_index)
             self.update_coil_focus(None)
@@ -166,16 +241,27 @@ class Controller:
             self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_init_scanner_clicked(self, bbox : list, vol_res : list):
+        '''
+        Handles the (valid) pressing of 'Initialize Scanner'
+
+        1. Initializes the Controller's 'Scanner' object using the passed parameters
+        2. Updates the number of slices according to the given bbox
+        3. Updates the coil_control widget accordingly
+        4. Disables the edit/delete options (i.e., buttons) in the coil overview pans
+        5. Sets the GUI to view the coil overview pane in the top left widget
+
+        Parameters
+        ----------
+        bbox : list
+            The parsed bbox values from the GUI
+        vol_res : list
+            The parsed vol_res values from the GUI
+        '''
         self.scanner = Scanner(bbox, vol_res)
-
         self.update_num_slices()
-
         self.update_coil_control()
-
         self.show_scanner_plot()
-
         self.disable_coil_ed()
-
         self.view.tl_w.stack.setCurrentIndex(2)
 
     def handle_mod_scanner_clicked(self):
@@ -187,25 +273,53 @@ class Controller:
         self.update_coil_control()
 
     def handle_edit_coil_clicked(self):
+        '''
+        Handles the user selecting to 'Edit' an already created coil
 
-        self.view.tl_w.coil_design.del_seg_btn.setDisabled(True)
-        self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
-        self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
+        1. Logic: Updates 
+        2. GUI: Pane preparation - disables segment editing and segment editing panel
+        '''
 
-        self.update_coil_focus(self.coil_focus_index) # Sets the focus index
+        # self.update_coil_focus(self.coil_focus_index) # Sets the focus index
+        # self.update_num_slices()
+
+        self.disable_segment_ed()
+        self.disable_seg_edit()
+        # self.view.tl_w.coil_design.del_seg_btn.setDisabled(True)
+        # self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
+        # self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
         self.update_coil_design()
-        self.update_num_slices()
         self.view.tl_w.stack.setCurrentIndex(3)
 
     def handle_add_coil_clicked(self):
-        self.view.tl_w.coil_design.del_seg_btn.setDisabled(True)
-        self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
-        self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
+        '''
+        Handles a user pressing the 'Add Coil' button in the coil control pane
+
+        1. Logic: Adds a new coil to the scanner object without any segments; updates the coil
+        focus (index) to the newly created coil; appropriately updates the segment focus to None
+        2. GUI: Prepares 'Coil Design' pane by disabling the 'Edit' and 'Delete' segment buttons;
+        disabling the segment editing widget; updates the the design pane; and sets the in-view
+        '''
+
         self.scanner.add_coils(Coil(scanner = self.scanner)) # Adds a coil without any segments
         self.update_coil_focus(len(self.scanner.coils) - 1) # Sets the focus index to be the last
-        self.update_num_slices()
+        self.update_segment_focus(None)
+
+        # self.view.tl_w.coil_design.del_seg_btn.setDisabled(True)
+        # self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
+        self.disable_coil_ed()
+        self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
+        # self.update_num_slices()
         self.update_coil_design()
         self.view.tl_w.stack.setCurrentIndex(3)
+
+    def disable_seg_edit(self):
+        '''
+        Clears and disables the segment editor pane in the coil design panel
+        '''
+
+        self.view.tl_w.coil_design.clear_all_text()
+        self.view.tl_w.coil_design.seg_edit_gb.setDisabled(True)
 
     def handle_back_clicked(self):
         self.update_coil_focus(None)
@@ -284,7 +398,7 @@ class Controller:
                 raise ValueError('Incompatible list size passed for segment creation')
             
         else: # Modifying a previously creating segment (i.e., editing a segment)
-             # Storing input values
+            # Storing input values
             self.user_inputs[self.coil_focus_index][self.segment_focus_index] = seg
 
             if len(seg) == 6: # Straight Segment
@@ -310,7 +424,8 @@ class Controller:
             else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
                 raise ValueError('Incompatible list size passed for segment creation')  
             
-            self.scanner.coils[self.coil_focus_index].B_vol = self.scanner.coils[self.coil_focus_index].B_volume()
+            # self.scanner.coils[self.coil_focus_index].B_vol = self.scanner.coils[self.coil_focus_index].B_volume()
+            self.update_B_vol_slice()
 
             self.editing = False         
 
@@ -321,17 +436,20 @@ class Controller:
 
     def show_fields_plot(self):
         
-        if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
-            print('can\'t show field plots; type not array')
-            return
-        
+        # if type(self.scanner.coils[self.coil_focus_index].B_vol_slice) != np.ndarray:
+        #     print('can\'t show field plots; type not array')
+        #     return
+
         if len(self.view.bl_w.figure.get_axes()) == 4:
             self.view.bl_w.figure.get_axes()[3].remove()
 
-        B_field = self.scanner.coils[self.coil_focus_index].B_vol
+        # B_field = self.scanner.coils[self.coil_focus_index].B_vol_slice
+        B_field = self.slice_B_vol
 
 
         Bx = B_field[0, :, :, :]
+        print(Bx.shape)
+
         By = B_field[1, :, :, :]
         Bz = B_field[2, :, :, :]
 
@@ -394,9 +512,9 @@ class Controller:
 
     def show_mag_phase_plot(self):
 
-        if type(self.scanner.coils[self.coil_focus_index].B_vol) != np.ndarray:
-            print('can\'t show mag phase plots; type not array')
-            return
+        # if type(self.scanner.coils[self.coil_focus_index].B_vol_slice) != np.ndarray:
+        #     print('can\'t show mag phase plots; type not array')
+        #     return
 
         for axes in self.view.br_w.axes:
             axes.clear()
@@ -405,7 +523,8 @@ class Controller:
             self.view.br_w.figure.get_axes()[2].remove()
             self.view.br_w.figure.get_axes()[2].remove()
 
-        B_field = self.scanner.coils[self.coil_focus_index].B_vol
+        # B_field = self.scanner.coils[self.coil_focus_index].B_vol_slice
+        B_field = self.slice_B_vol
         B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]    
 
         x_dim = np.arange(self.scanner.bbox[0], self.scanner.bbox[1] + 1e-10, self.scanner.vol_res[0])
@@ -469,10 +588,26 @@ class Controller:
         self.show_mag_phase_plot()
 
     def update_coil_control(self):
+        '''
+        Updates the coil control widget in the GUI
+
+        1. Updates the coil scroll bar according to the current scanner properties
+        2. Displays the current scanner plot according to the current scanner properties
+        '''
         self.update_coil_scroll()
         self.show_scanner_plot()
 
     def update_coil_scroll(self):
+        '''
+        Updates the coil scroll bar in the coil control widget as part of the GUI
+
+        1. Instantiates a LV seg_n_list (a list)
+        2. Appends to seg_n_list the number of segments in each of the scanner's coils iteratively 
+        3. Calls the GUI coil control's method 'update_coils', with seg_n_list passed as a parameter:
+            Replaces the 'current' (i.e., old) coil scroll panel with a newly built one reflecting 
+            the current scanner parameters
+        '''
+
         seg_n_list = []
         for coil in self.scanner.coils:
             seg_n_list.append(len(coil.segments))
@@ -480,13 +615,25 @@ class Controller:
         self.view.tl_w.coil_control.update_coils(seg_n_list)
 
     def show_scanner_plot(self):
+        '''
+        Displays (i.e., plots) the current 'Scanner' with all coils in the coil control pane of the GUI
+
+        1. Clears the previously displayed plot (to prevent ghosting residue)
+        2. Sets labels and view, and plots the bounding box within the frmae
+        3. Plots the currently 'in-focus' slice within the bounding box plot
+        4. Iteratively plots every coil within the scanner frame
+        '''
+
         self.view.tr_w.ax.cla()
         self.view.tr_w.ax.set_xlabel("$x$")
         self.view.tr_w.ax.set_ylabel("$y$")
         self.view.tr_w.ax.set_zlabel("$z$")
-
-        #-------------------------------------------------
-        # UNDER CONSTRUCTION: PLOT BOUNDING BOX
+        x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
+        y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
+        z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
+        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - 0.25 * x_dif, self.scanner.get_bbox()[1] + 0.25 * x_dif)
+        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - 0.25 * y_dif, self.scanner.get_bbox()[3] + 0.25 * y_dif)
+        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - 0.25 * z_dif, self.scanner.get_bbox()[5] + 0.25 * z_dif)
 
         bbox_vertices = [
             (self.scanner.get_bbox()[0], self.scanner.get_bbox()[2], self.scanner.get_bbox()[4]),
@@ -543,29 +690,22 @@ class Controller:
                                           linewidths = 1, edgecolors = 'r', facecolors = 'r', alpha = 0.2)
                 self.view.tr_w.ax.add_collection3d(slice)
 
-        x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
-        y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
-        z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
-        max_dif = max(x_dif, y_dif, z_dif)
-        # self.view.tr_w.ax.set_xlim(max_dif)
-        # self.view.tr_w.ax.set_ylim(max_dif)
-        # self.view.tr_w.ax.set_zlim(max_dif)
-        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - 0.25 * x_dif, self.scanner.get_bbox()[1] + 0.25 * x_dif)
-        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - 0.25 * y_dif, self.scanner.get_bbox()[3] + 0.25 * y_dif)
-        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - 0.25 * z_dif, self.scanner.get_bbox()[5] + 0.25 * z_dif)
-
-        # END CONSTRUCTION ZONE
-        #-------------------------------------------------
-
         for coil in self.scanner.coils:
             if (self.coil_focus_index != None) and (self.scanner.coils[self.coil_focus_index] == coil):
                 coil.plot_coil(self.view.tr_w.ax, True, self.segment_focus_index)
             else:
                 coil.plot_coil(self.view.tr_w.ax, False, self.segment_focus_index)
-        
+
         self.view.tr_w.canvas.draw()
 
     def update_segment_scroll(self):
+        '''
+        Updates the segment scroll pane in the 'Coil Design' widget
+
+        1. GUI: Iterates through each segment in the focus coil and collects information to 
+        display on the segment scroll pane
+        '''
+
         fns = []
         low_lims = []
         up_lims = []
@@ -581,10 +721,25 @@ class Controller:
         self.view.tl_w.coil_design.update_segments(fns, low_lims, up_lims)
             
     def show_coil_plot(self):
+        '''
+        Displays the coil plot
+
+        1. Clears the previous plot to prevent labeling and defines the frame
+        2. Plots bounding box with current slice
+        3. Plots in-focus coil
+        '''
+
         self.view.tr_w.ax.cla()
         self.view.tr_w.ax.set_xlabel("$x$")
         self.view.tr_w.ax.set_ylabel("$y$")
         self.view.tr_w.ax.set_zlabel("$z$")
+
+        x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
+        y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
+        z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
+        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - 0.25 * x_dif, self.scanner.get_bbox()[1] + 0.25 * x_dif)
+        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - 0.25 * y_dif, self.scanner.get_bbox()[3] + 0.25 * y_dif)
+        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - 0.25 * z_dif, self.scanner.get_bbox()[5] + 0.25 * z_dif)
 
         bbox_vertices = [
             (self.scanner.get_bbox()[0], self.scanner.get_bbox()[2], self.scanner.get_bbox()[4]),
@@ -640,22 +795,24 @@ class Controller:
                 slice = Poly3DCollection([[(x_min, y_min, z), (x_max, y_min, z), (x_max, y_max, z), (x_min, y_max, z)]],
                                           linewidths = 1, edgecolors = 'r', facecolors = 'r', alpha = 0.2)
                 self.view.tr_w.ax.add_collection3d(slice)
-
-        x_dif = self.scanner.get_bbox()[1] - self.scanner.get_bbox()[0]
-        y_dif = self.scanner.get_bbox()[3] - self.scanner.get_bbox()[2]
-        z_dif = self.scanner.get_bbox()[5] - self.scanner.get_bbox()[4]
-        # self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - x_dif, self.scanner.get_bbox()[1] + x_dif)
-        # self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - y_dif, self.scanner.get_bbox()[3] + y_dif)
-        # self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - z_dif, self.scanner.get_bbox()[5] + z_dif)
-        self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - 0.25 * x_dif, self.scanner.get_bbox()[1] + 0.25 * x_dif)
-        self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - 0.25 * y_dif, self.scanner.get_bbox()[3] + 0.25 * y_dif)
-        self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - 0.25 * z_dif, self.scanner.get_bbox()[5] + 0.25 * z_dif)
-
         
         self.scanner.coils[self.coil_focus_index].plot_coil(self.view.tr_w.ax, False, self.coil_focus_index)
         self.view.tr_w.canvas.draw()  
 
     def update_coil_design(self):
+        '''
+        Updates the 'Coil Design' pane to reflect the current coil being created/modified/etc.
+
+        1. Logic: Update self.slice_B_vol
+        2. GUI: Update the segment scroll bar
+        3. GUI: Show the coil plot in the top right pane
+        4. GUI: Clears all text values (unless a segment is being added)
+        5. GUI: Shows the bottom plots if there is information to show, and clears and updates coil 
+        and segment focus otherwise.
+        '''
+
+        self.update_B_vol_slice()
+
         self.update_segment_scroll()
         self.show_coil_plot()
 
@@ -665,40 +822,88 @@ class Controller:
         if len(self.scanner.coils) >= 1 and len(self.scanner.coils[-1].segments) >= 1:
             self.show_bottom_plots()
         else:
+            # if len(self.scanner.coils) == 0:
+            #     self.update_coil_focus(None)
+            #     self.update_segment_focus(None)
+            # elif len(self.scanner.coils[-1].segments) == 0:
+            #     self.update_segment_focus(None)
             self.clear_bottom_plots()      
 
     def update_coil_focus(self, index : int | None):
+        '''
+        Updates the in-focus coil using its index
+
+        1. GUI: Removes the highlight of the currently in-focus coil in the 'Coil Control' pane
+        2. Logic: Sets self.coil_focus_index to the passed parameter index and update the number of slices
+        3. GUI: If new self.coil_focus_index is None, disables coil edit + delete
+        in the coil control panel and clear the bottom plots
+        4. GUI: If new self.coil_focus_index is not None, update self.slice_B_vol, enable coil editing and deleting,
+        highlight the in-focus coil on the coil scroll pane, and update bottom plots if there are segments to plot
+
+        Parameters
+        ----------
+        index : int | None
+            The index of the desired coil to set in focus
+        '''
+
         self.view.tl_w.coil_control.remove_highlight(self.coil_focus_index)
 
         self.coil_focus_index = index
+        self.update_num_slices()
 
         if self.coil_focus_index == None:
             self.disable_coil_ed()
             self.clear_bottom_plots()
         else:
+            self.update_B_vol_slice()
             self.enable_coil_ed()
             self.view.tl_w.coil_control.highlight_selected(self.coil_focus_index)
             if len(self.scanner.coils[self.coil_focus_index].segments) >= 1:
                 self.show_bottom_plots()
 
     def enable_coil_ed(self):
+        '''
+        Set 'Coil Control' pane to permit editing and deleting of coils
+
+        1. GUI: Enables both the 'Delete Coil' and 'Edit Coil' buttons
+        '''
+
         self.view.tl_w.coil_control.del_coil_btn.setDisabled(False)
         self.view.tl_w.coil_control.edit_coil_btn.setDisabled(False)
 
     def disable_coil_ed(self):
+        '''
+        Disables the coil edit + delete buttons in the coil control panel
+        '''
+
         self.view.tl_w.coil_control.del_coil_btn.setDisabled(True)
         self.view.tl_w.coil_control.edit_coil_btn.setDisabled(True)
 
     def update_segment_focus(self, index : int | None):
+        '''
+        Updates the segment focus 
+
+        1. Removes the currently highlighted segment in the coil design scroll wheel
+        2. Updates segment_focus_index to passed index
+        3. Call self.update_coil_design() to update the coil design pane
+        4. If segment focus is None, disable segment editing and deleting;
+        else enable segment editing and deleting and highlight focus segment
+
+        Parameters
+        ----------
+        index : int | None
+            The index to which the segment focus is being set
+        '''
+
         self.view.tl_w.coil_design.remove_highlight(self.segment_focus_index)
 
         self.segment_focus_index = index
 
+        self.update_coil_design()
+
         if self.segment_focus_index == None:
-            self.disable_segment_ed()
-            self.update_coil_design()   
+            self.disable_segment_ed()  
         else:
-            self.update_coil_design()
             self.enable_segment_ed()
             self.view.tl_w.coil_design.highlight_selected(self.segment_focus_index)
 
@@ -737,7 +942,9 @@ class Controller:
                         if len(data['user_inputs'][i][j]) == 6: # Straight Segment
                             line = Straight(seg[0], seg[1], seg[2], seg[3] - seg[0], seg[4] - seg[1], seg[5] - seg[2])
 
-                            segs.append(Segment(line, 0, 1, seg_B = np.array(data['coils'][i][j]))) # Add segment
+                            # segs.append(Segment(line, 0, 1, seg_B = np.array(data['coils'][i][j]))) # Add segment
+                            segs.append(Segment(line, 0, 1)) # Add segment
+
 
                         elif len(seg) == 13: # Curved Segment
                             c_x, c_y, c_z = seg[0], seg[1], seg[2]
@@ -752,7 +959,8 @@ class Controller:
                             r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
                             line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
                         
-                            segs.append(Segment(line, p_min * np.pi, p_max * np.pi, seg_B = np.array(data['coils'][i][j]))) # Add segment
+                            # segs.append(Segment(line, p_min * np.pi, p_max * np.pi, seg_B = np.array(data['coils'][i][j]))) # Add segment
+                            segs.append(Segment(line, p_min * np.pi, p_max * np.pi)) # Add segment
 
                         else: # Should never happen if controller works (i.e., passed list is not of length 6 or 13)
                             raise ValueError('Incompatible list size passed for segment creation')

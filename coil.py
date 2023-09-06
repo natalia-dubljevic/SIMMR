@@ -51,9 +51,9 @@ class Coil:
             for segment in segments:
                 self.add_segment(segment)
         self.scanner = None
-        self.B_vol = None
-
         self.set_scanner(scanner) # Link coil to its 'parent' scanner - for access to self.scanner.bbox, self.scanner.vol_res, etc.
+        self.B_vol = None # For entire area -> should only be calculated on export (i.e., not during prototyping due to computational demands)
+        self.B_vol_slice = None # For 'visible' slice (i.e., selected slice) -> should be updated everytime the slice is changed
 
     def set_scanner(self, scanner : 'Scanner'):
         '''
@@ -135,7 +135,7 @@ class Coil:
         self.segments.append(segment)
         segment.set_coil(self)
 
-        self.update_mag_vol()
+        # self.update_mag_vol()
 
     def B_volume(self) -> np.ndarray:
         ''' 
@@ -176,4 +176,11 @@ class Coil:
 
         if len(self.segments) > 0 and self.scanner is not None:
             self.B_vol = self.B_volume()
-            
+
+    def update_B_vol_slice(self, volume_coords : list):
+        '''
+        Updates self.B_vol_slice to reflect the current B_volume and slice
+
+
+        '''
+        pass

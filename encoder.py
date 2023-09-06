@@ -10,7 +10,7 @@ class CustomEncoder(json.JSONEncoder):
                 'user_inputs': obj.user_inputs,
                 'scanner_bbox': obj.scanner.bbox,
                 'scanner_vol_res': obj.scanner.vol_res,
-                'coils': self.encode_coils(obj)
+                # 'coils': self.encode_coils(obj)
             }
             return obj_dict
         

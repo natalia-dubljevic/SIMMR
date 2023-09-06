@@ -234,12 +234,15 @@ B_field = c1.B_volume() # Choose which coil to generate B_field, etc. for
 # time_end = time.time()
 # print('Optimized: ' + str(time_end - time_start) + ' seconds')
 
+volume_coords = [-1, 1, 0, 0, -1, 1]
+
 import numpy as np
 
-test = np.array([[1, 2, 3],
-                [4, 5, 6],
-                [7, 8, 9]])
+x_dim = np.arange(volume_coords[0], volume_coords[1] + 1e-10, 0.5)
+y_dim = np.arange(volume_coords[2], volume_coords[3] + 1e-10, 0.5)
+z_dim = np.arange(volume_coords[4], volume_coords[5] + 1e-10, 0.5)
+output = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-print(test - 3)
-
+print(output)
+print(output[0].shape)
 
