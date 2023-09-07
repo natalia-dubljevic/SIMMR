@@ -195,6 +195,10 @@ class Controller:
             export_file = self.view.save_file_dialog()
             tmp = []
             for i in range(0, len(self.scanner.coils)):
+                # B_field = self.scanner.coils[i].B_vol
+                for segment in self.scanner.coils[i].segments:
+                    segment.seg_B = segment.calc_seg_B(self.scanner.get_bbox())
+                self.scanner.coils[i].update_mag_vol()
                 B_field = self.scanner.coils[i].B_vol
                 B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]  
                 print(B_complex)
@@ -268,6 +272,14 @@ class Controller:
         self.view.tl_w.stack.setCurrentIndex(1)
 
     def handle_del_coil_clicked(self):
+        '''
+        Handles the user's choice to delete a coil
+
+        1. Deletes the corresponding index's coil
+        2. Updates the focus index to None
+        3. Updates the coil control pane
+        '''
+
         del self.scanner.coils[self.coil_focus_index]
         self.update_coil_focus(None)
         self.update_coil_control()
@@ -366,6 +378,16 @@ class Controller:
         self.update_segment_focus(None)
 
     def handle_confirm_seg_clicked(self, seg : list):
+        '''
+        Handles the user's selection of 'Confirm' (either upon segment creation or segment editing)
+
+        1. Checks self.editing to determine if a new segment is being created or if an old one is being edited 
+        2. Stores the user's inputs (replacing if necessary)
+        3. (Re)creates segment
+        4. Updates B_vol_slice accordingly
+        5. Updates the coil design pane
+        '''
+
 
         if self.editing == False:
             # Storing input values
@@ -435,6 +457,10 @@ class Controller:
         self.update_coil_design()
 
     def show_fields_plot(self):
+        '''
+        Displays the magnetic field plots in the bottom left pane
+        '''
+
         
         # if type(self.scanner.coils[self.coil_focus_index].B_vol_slice) != np.ndarray:
         #     print('can\'t show field plots; type not array')
@@ -511,6 +537,9 @@ class Controller:
         self.view.bl_w.canvas.draw()
 
     def show_mag_phase_plot(self):
+        '''
+        Shows the magnitude and phase of the sensitivity maps in the bottom right pane
+        '''
 
         # if type(self.scanner.coils[self.coil_focus_index].B_vol_slice) != np.ndarray:
         #     print('can\'t show mag phase plots; type not array')
@@ -572,6 +601,10 @@ class Controller:
         self.view.br_w.canvas.draw()  
 
     def clear_bottom_plots(self):
+        '''
+        Clears the bottom plots on the GUI
+        '''
+
         for ax in self.view.bl_w.figure.axes:
             ax.cla()
         self.view.bl_w.canvas.draw()
@@ -916,6 +949,9 @@ class Controller:
         self.view.tl_w.coil_design.edit_seg_btn.setDisabled(True)
 
     def save_workspace(self):
+        '''
+        Saves the current workspace
+        '''
         try:
             if self.file is None:
                 self.file = self.view.save_file_dialog()
@@ -928,6 +964,10 @@ class Controller:
             self.view.error_poput('Error', 'Error saving workspace')
 
     def load_workspace(self):
+        '''
+        Loads a stored workspace, throwing an error if it is not completed
+        Uses the stored user values 
+        '''
         try:
             self.file = self.view.open_file_dialog()    
 
