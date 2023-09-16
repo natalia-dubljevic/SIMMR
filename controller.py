@@ -16,6 +16,33 @@ import matplotlib as mpl
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from matplotlib.patches import Polygon
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from PyQt5.QtCore import QThread
+from PyQt5 import QtGui
+
+class exportVolThread(QThread):
+    def __init__(self, export_file, scanner):
+        QThread.__init__(self)
+        self.scanner = scanner
+        self.export_file = export_file
+
+    def get_seg_B(self):
+        tmp = []
+        for i in range(0, len(self.scanner.coils)):
+            for segment in self.scanner.coils[i].segments:
+                segment.seg_B = segment.calc_seg_B(self.scanner.get_bbox())
+            self.scanner.coils[i].update_mag_vol()
+            B_field = self.scanner.coils[i].B_vol
+            B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]  
+            print(B_complex)
+            tmp.append(B_complex)
+        print(tmp)
+        export_array = np.array(tmp)
+        print(export_array)
+        np.save(self.export_file, export_array) 
+
+    def run(self):
+        self.get_seg_B()
+    
 
 class Controller:
 
@@ -86,7 +113,7 @@ class Controller:
         if len(self.scanner.coils) != 0:
             self.update_B_vol_slice()
 
-        if self.coil_focus_index != None and len(self.scanner.get_coils[self.coil_focus_index].segments) != 0:
+        if self.coil_focus_index != None and len(self.scanner.get_coils(self.coil_focus_index).segments) != 0:
             self.show_bottom_plots()
 
     def update_num_slices(self):
@@ -187,26 +214,37 @@ class Controller:
         if self.coil_focus_index != None:
             self.show_bottom_plots()
 
+    def done(self):
+        """
+        Show the message that fetching posts is done.
+        Disable Stop button, enable the Start one and reset progress bar to 0
+        """
+        QtGui.QMessageBox.information(self, "Done!", "Done calculating sensitivity maps!")
+
     def handle_export_btn_clicked(self):
         '''
         Handles the exporting of the final sensitivity profiles
         '''
         try:
             export_file = self.view.save_file_dialog()
-            tmp = []
-            for i in range(0, len(self.scanner.coils)):
-                # B_field = self.scanner.coils[i].B_vol
-                for segment in self.scanner.coils[i].segments:
-                    segment.seg_B = segment.calc_seg_B(self.scanner.get_bbox())
-                self.scanner.coils[i].update_mag_vol()
-                B_field = self.scanner.coils[i].B_vol
-                B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]  
-                print(B_complex)
-                tmp.append(B_complex)
-            print(tmp)
-            export_array = np.array(tmp)
-            print(export_array)
-            np.save(export_file, export_array) 
+            self.view.thread = exportVolThread(export_file, self.scanner)
+            #self.view.connect(self.get_thread.quit, self.done)
+            self.view.tr_w.export_btn.setEnabled(False)
+            self.view.thread.start()
+            #tmp = []
+            #for i in range(0, len(self.scanner.coils)):
+            #    # B_field = self.scanner.coils[i].B_vol
+            #    for segment in self.scanner.coils[i].segments:
+            #        segment.seg_B = segment.calc_seg_B(self.scanner.get_bbox())
+            #    self.scanner.coils[i].update_mag_vol()
+            #    B_field = self.scanner.coils[i].B_vol
+            #    B_complex = B_field[0, :, :, :] - 1j * B_field[1, :, :, :]  
+            #    print(B_complex)
+            #    tmp.append(B_complex)
+            #print(tmp)
+            #export_array = np.array(tmp)
+            #print(export_array)
+            #np.save(export_file, export_array) 
         except Exception as e:
             print('Error exporting sensitivity maps')
             print(e)
