@@ -20,8 +20,10 @@ from PyQt5.QtCore import QThread
 from PyQt5 import QtGui
 
 class exportVolThread(QThread):
-    def __init__(self, export_file, scanner):
+    def __init__(self, export_file, scanner, controller):
         QThread.__init__(self)
+        self.controller = controller # FIXME
+        self.controller.scanner
         self.scanner = scanner
         self.export_file = export_file
 
@@ -42,6 +44,8 @@ class exportVolThread(QThread):
 
     def run(self):
         self.get_seg_B()
+        self.controller.enable_export_btn()
+
     
 
 class Controller:
@@ -221,13 +225,16 @@ class Controller:
         """
         QtGui.QMessageBox.information(self, "Done!", "Done calculating sensitivity maps!")
 
+    def enable_export_btn(self):
+        self.view.tr_w.export_btn.setEnabled(True)
+
     def handle_export_btn_clicked(self):
         '''
         Handles the exporting of the final sensitivity profiles
         '''
         try:
             export_file = self.view.save_file_dialog()
-            self.view.thread = exportVolThread(export_file, self.scanner)
+            self.view.thread = exportVolThread(export_file, self.scanner, self)
             #self.view.connect(self.get_thread.quit, self.done)
             self.view.tr_w.export_btn.setEnabled(False)
             self.view.thread.start()
