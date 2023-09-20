@@ -4,7 +4,9 @@ import matplotlib as mpl
 import numpy as np
 from scipy.integrate import quad_vec
 import sympy as smp
-    
+
+
+
 def B(lower_lim : float, upper_lim : float, dBxdt : callable, dBydt : callable, 
       dBzdt : callable, x : float, y : float, z : float) -> np.ndarray:
     '''Integrate dBdt along the length of the wire for a given point in space

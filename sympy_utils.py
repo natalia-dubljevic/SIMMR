@@ -106,7 +106,7 @@ def create_sympy_rectangle(t: smp.core.symbol.Symbol, height: float,
     Parameters
     ----------
     t : sympy.core.symbol.Symbol
-        Sympy symbol representing parameterizaiton parameter t
+        Sympy symbol representing parameterization parameter t
     height : float
         The height of the rectangle
     width : float
