@@ -76,7 +76,7 @@ class Coil:
         
         self.scanner = scanner
 
-    def plot_coil(self, ax : plt.axes, coil_focus : bool = False, seg_focus : int = None) -> bool:
+    def plot_coil(self, ax : plt.axes, coil_focus : bool = False, seg_focus : int = None, seg_color='black') -> bool:
         '''
         Generate a 3D plot of a coil on a passed pyplot axis
 
@@ -97,11 +97,9 @@ class Coil:
 
         for segment in self.segments:
 
-            seg_color = 'black'
-
             x_coords, y_coords, z_coords = segment.get_coords()
 
-            ax.plot(x_coords, y_coords, z_coords, color = seg_color, lw = 3)
+            ax.plot(x_coords, y_coords, z_coords, color = seg_color, lw = 2)
 
             # Add an arrow to the midpoint to give the direction
             n = len(x_coords) // 2

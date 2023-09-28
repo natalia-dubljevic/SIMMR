@@ -127,7 +127,7 @@ class Scanner:
 
         return self.vol_res
 
-    def plot_coils(self) -> bool:
+    def plot_coils(self) -> bool:  # deprecated??
         '''
         Plots all coils present in the scanner
 
@@ -142,9 +142,14 @@ class Scanner:
         ax.set_xlabel("$x$")
         ax.set_ylabel("$y$")
         ax.set_zlabel("$z$")
+        c1 = '#3eb4cb'
+        c2 = '#8c65bb'
 
-        for coil in self.coils:
-            coil.plot_coil(ax)
+        for i, coil in enumerate(self.coils):
+            if i % 2 == 0:
+                coil.plot_coil(ax, seg_color=c1)
+            else:
+                coil.plot_coil(ax, seg_color=c2)
 
         plt.tight_layout()
         plt.gca().set_aspect('equal')

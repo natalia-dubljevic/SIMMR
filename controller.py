@@ -114,7 +114,7 @@ class Controller:
         elif self.view.tl_w.stack.currentIndex() == 3:
             self.show_coil_plot()
 
-        if len(self.scanner.coils) != 0:
+        if len(self.scanner.coils) != 0 and self.coil_focus_index != None:
             self.update_B_vol_slice()
 
         if self.coil_focus_index != None and len(self.scanner.get_coils(self.coil_focus_index).segments) != 0:
@@ -212,7 +212,7 @@ class Controller:
         elif self.view.tl_w.stack.currentIndex() == 3:
             self.show_coil_plot()
 
-        if len(self.scanner.coils) != 0:
+        if len(self.scanner.coils) != 0 and self.coil_focus_index != None:
             self.update_B_vol_slice()
 
         if self.coil_focus_index != None:
@@ -712,6 +712,7 @@ class Controller:
         self.view.tr_w.ax.set_xlim(self.scanner.get_bbox()[0] - 0.25 * x_dif, self.scanner.get_bbox()[1] + 0.25 * x_dif)
         self.view.tr_w.ax.set_ylim(self.scanner.get_bbox()[2] - 0.25 * y_dif, self.scanner.get_bbox()[3] + 0.25 * y_dif)
         self.view.tr_w.ax.set_zlim(self.scanner.get_bbox()[4] - 0.25 * z_dif, self.scanner.get_bbox()[5] + 0.25 * z_dif)
+        self.view.tr_w.ax.set_aspect('equal')
 
         bbox_vertices = [
             (self.scanner.get_bbox()[0], self.scanner.get_bbox()[2], self.scanner.get_bbox()[4]),
@@ -767,14 +768,14 @@ class Controller:
                 slice = Poly3DCollection([[(x_min, y_min, z), (x_max, y_min, z), (x_max, y_max, z), (x_min, y_max, z)]],
                                           linewidths = 1, edgecolors = 'r', facecolors = 'r', alpha = 0.2)
                 self.view.tr_w.ax.add_collection3d(slice)
-
         for coil in self.scanner.coils:
             if (self.coil_focus_index != None) and (self.scanner.coils[self.coil_focus_index] == coil):
                 coil.plot_coil(self.view.tr_w.ax, True, self.segment_focus_index)
             else:
                 coil.plot_coil(self.view.tr_w.ax, False, self.segment_focus_index)
-
+        
         self.view.tr_w.canvas.draw()
+        # self.view.tr_w.figure.savefig('test_figure.png', bbox_inches='tight', dpi=600)
 
     def update_segment_scroll(self):
         '''
@@ -1056,7 +1057,7 @@ class Controller:
                     self.scanner.add_coils(coil_to_add)
 
                 self.user_inputs = data['user_inputs']
-            
+            self.update_num_slices()
             return True
         
         except Exception as e:
