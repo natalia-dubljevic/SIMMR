@@ -234,15 +234,59 @@ B_field = c1.B_volume() # Choose which coil to generate B_field, etc. for
 # time_end = time.time()
 # print('Optimized: ' + str(time_end - time_start) + ' seconds')
 
-volume_coords = [-1, 1, 0, 0, -1, 1]
+# volume_coords = [-1, 1, 0, 0, -1, 1]
 
-import numpy as np
+# import numpy as np
 
-x_dim = np.arange(volume_coords[0], volume_coords[1] + 1e-10, 0.5)
-y_dim = np.arange(volume_coords[2], volume_coords[3] + 1e-10, 0.5)
-z_dim = np.arange(volume_coords[4], volume_coords[5] + 1e-10, 0.5)
-output = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
+# x_dim = np.arange(volume_coords[0], volume_coords[1] + 1e-10, 0.5)
+# y_dim = np.arange(volume_coords[2], volume_coords[3] + 1e-10, 0.5)
+# z_dim = np.arange(volume_coords[4], volume_coords[5] + 1e-10, 0.5)
+# output = np.meshgrid(x_dim, y_dim, z_dim, indexing='ij')
 
-print(output)
-print(output[0].shape)
+# print(output)
+# print(output[0].shape)
 
+def check_palindrome(input : str):
+    for i in range(len(input) // 2):
+        if input[i] != input[len(input) - 1 - i]:
+            return False
+    return True
+
+# print(check_palindrome('20022002'))
+
+def find_smallest(ints : list):
+    smallest = ints[0]
+    for n in ints:
+        if n < smallest:
+            smallest = n
+    return smallest
+
+def sort(ints : list):
+    sorted = []
+    while len(ints) > 0:
+        sorted.append(ints.pop(ints.index(find_smallest(ints))))
+    return sorted
+
+# print(sort([5, 2, 2, 1, 4]))  
+
+from math import log
+
+P = [0.36, 0.48, 0.16]
+Q = [0.333, 0.333, 0.333]
+
+def D(P, Q):
+    result = 0
+    for i in range(len(P)):
+        result += P[i] * log(P[i] / Q[i])
+    return result
+
+def M(P, Q):
+    result = []
+    for i in range(len(P)):
+        result.append(0.5 * (P[i] + Q[i]))
+    return result
+
+def JSD(P, Q):
+    return 0.5 * D(P, M(P, Q)) + 0.5 * D(Q, M(P, Q))
+
+print(JSD(P, Q))
