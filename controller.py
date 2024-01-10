@@ -451,12 +451,40 @@ class Controller:
                 r1_x, r1_y, r1_z, r1_mag = seg[3], seg[4], seg[5], seg[6]
                 r2_x, r2_y, r2_z, r2_mag = seg[7], seg[8], seg[9], seg[10]
                 p_min, p_max = seg[11], seg[12]
-                r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
-                r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
-                r1_mult = r1_norm * r1_mag
-                r2_mult = r2_norm * r2_mag
-                r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
-                r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                # r1_norm = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z **2)
+                # r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
+                # # r1_mult = r1_norm * r1_mag
+                # # r2_mult = r2_norm * r2_mag
+                # # r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
+                # # r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                # r1_x, r1_y, r1_z = r1_x / r1_norm * r1_mag, r1_y / r1_norm * r1_mag, r1_z / r1_norm * r1_mag
+                # r2_x, r2_y, r2_z = r2_x / r2_norm * r2_mag, r2_y / r2_norm * r2_mag, r2_z / r2_norm * r2_mag
+
+                # passed_r1_mag = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z ** 2)
+                # print(f'passed_r1_mag: {passed_r1_mag}')
+                # norm_r1_x, norm_r1_y, norm_r1_z = r1_x / passed_r1_mag, r1_y / passed_r1_mag, r1_z / passed_r1_mag
+                # print(f'norm_r1: {norm_r1_x}, {norm_r1_y}, {norm_r1_z}')
+                # r1_x, r1_y, r1_z = r1_mag * norm_r1_x, r1_mag * norm_r1_y, r1_mag * norm_r1_z
+
+                # passed_r2_mag = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z ** 2)
+                # print(f'passed_r2_mag: {passed_r2_mag}')
+                # norm_r2_x, norm_r2_y, norm_r2_z = r2_x / passed_r2_mag, r2_y / passed_r2_mag, r2_z / passed_r2_mag
+                # print(f'norm_r2: {norm_r2_x}, {norm_r2_y}, {norm_r2_z}')
+                # r2_x, r2_y, r2_z = r2_mag * norm_r2_x, r2_mag * norm_r2_y, r2_mag * norm_r2_z
+
+                passed_r1_mag = sqrt(r1_x ** 2 + r1_y ** 2 + r1_z ** 2)
+                r1_mult = r1_mag / passed_r1_mag
+                print(f'r1_mult: {r1_mult}')
+                r1_x, r1_y, r1_z = r1_x * r1_mult, r1_y * r1_mult, r1_z * r1_mult
+
+                passed_r2_mag = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z ** 2)
+                r2_mult = r2_mag / passed_r2_mag
+                print(f'r2_mult: {r2_mult}')
+                r2_x, r2_y, r2_z = r2_x * r2_mult, r2_y * r2_mult, r2_z * r2_mult 
+
+                print(f'r1: {r1_x}, {r1_y}, {r1_z}')
+                print(f'r2: {r2_x}, {r2_y}, {r2_z}')
+
                 line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
             
                 self.scanner.coils[self.coil_focus_index].add_segment(Segment(line, p_min * np.pi, p_max * np.pi, self.scanner.get_coils(self.coil_focus_index))) # Add segment
@@ -482,8 +510,10 @@ class Controller:
                 r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
                 r1_mult = r1_norm * r1_mag
                 r2_mult = r2_norm * r2_mag
-                r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
-                r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                r1_x, r1_y, r1_z = r1_x / r1_norm * r1_mag, r1_y / r1_norm * r1_mag, r1_z / r1_norm * r1_mag
+                r2_x, r2_y, r2_z = r2_x / r2_norm * r2_mag, r2_y / r2_norm * r2_mag, r2_z / r2_norm * r2_mag
+                # r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
+                # r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
                 line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
             
                 self.scanner.coils[self.coil_focus_index].segments[self.segment_focus_index] = (Segment(line, p_min * np.pi, p_max * np.pi, self.scanner.get_coils(self.coil_focus_index))) # Add segment
@@ -1041,8 +1071,10 @@ class Controller:
                             r2_norm = sqrt(r2_x ** 2 + r2_y ** 2 + r2_z **2)
                             r1_mult = r1_norm * r1_mag
                             r2_mult = r2_norm * r2_mag
-                            r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
-                            r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
+                            r1_x, r1_y, r1_z = r1_x / r1_norm * r1_mag, r1_y / r1_norm * r1_mag, r1_z / r1_norm * r1_mag
+                            r2_x, r2_y, r2_z = r2_x / r2_norm * r2_mag, r2_y / r2_norm * r2_mag, r2_z / r2_norm * r2_mag
+                            # r1_x, r1_y, r1_z = r1_mult * r1_x, r1_mult * r1_y, r1_mult * r1_z
+                            # r2_x, r2_y, r2_z = r2_mult * r2_x, r2_mult * r2_y, r2_mult * r2_z
                             line = Curved(c_x, c_y, c_z, r1_x, r1_y, r1_z, r2_x, r2_y, r2_z)
                         
                             # segs.append(Segment(line, p_min * np.pi, p_max * np.pi, seg_B = np.array(data['coils'][i][j]))) # Add segment
