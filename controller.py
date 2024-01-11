@@ -800,8 +800,10 @@ class Controller:
 
         for coil in self.scanner.coils:
             if (self.coil_focus_index != None) and (self.scanner.coils[self.coil_focus_index] == coil):
+                print('in focus coil being plotted')
                 coil.plot_coil(self.view.tr_w.ax, True, self.segment_focus_index)
             else:
+                print('not in focus coil being plotted')
                 coil.plot_coil(self.view.tr_w.ax, False, self.segment_focus_index)
 
         self.view.tr_w.canvas.draw()
@@ -964,6 +966,7 @@ class Controller:
             self.clear_bottom_plots()
         else:
             self.update_B_vol_slice()
+            self.show_scanner_plot()
             self.enable_coil_ed()
             self.view.tl_w.coil_control.highlight_selected(self.coil_focus_index)
             if len(self.scanner.coils[self.coil_focus_index].segments) >= 1:

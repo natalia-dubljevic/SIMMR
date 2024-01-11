@@ -99,6 +99,9 @@ class Coil:
 
             seg_color = 'black'
 
+            if coil_focus == True:
+                seg_color = 'red'
+
             x_coords, y_coords, z_coords = segment.get_coords()
 
             ax.plot(x_coords, y_coords, z_coords, color = seg_color, lw = 3)
@@ -109,7 +112,7 @@ class Coil:
             ax.quiver(
                 x_coords[n], y_coords[n], z_coords[n],
                 x_coords[o] - x_coords[n], y_coords[o] - y_coords[n], z_coords[o] - z_coords[n],
-                color = 'black', pivot = 'middle', length = 5
+                color = seg_color, pivot = 'middle', length = 5
             )
 
         return True
