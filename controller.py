@@ -306,7 +306,11 @@ class Controller:
         vol_res : list
             The parsed vol_res values from the GUI
         '''
-        self.scanner = Scanner(bbox, vol_res)
+        if self.scanner == None:
+            self.scanner = Scanner(bbox, vol_res)
+        else:
+            self.scanner.bbox = bbox
+            self.scanner.vol_res = vol_res
         self.update_num_slices()
         self.update_coil_control()
         self.show_scanner_plot()
